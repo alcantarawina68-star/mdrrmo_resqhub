@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'contact_number',
         'barangay',
         'status',
+        'session_id',
     ];
 
     protected function casts(): array
@@ -65,6 +67,15 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;
+    }
+
+    public function hasActiveSession(): bool
+    {
+        return $this->session_id !== null
+            && DB::table('sessions')
+                ->where('id', $this->session_id)
+                ->where('user_id', $this->id)
+                ->exists();
     }
 
     public function scopeActive(Builder $query): Builder

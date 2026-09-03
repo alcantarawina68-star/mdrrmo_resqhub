@@ -24,6 +24,24 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
+        $user = User::where('email', $credentials['email'])->first();
+
+        if ($user !== null && $user->hasActiveSession()) {
+            throw ValidationException::withMessages([
+                'email' => 'This account is already logged in on another device. Please log out there first or wait for the session to expire.',
+            ]);
+        }
+
+        if ($user !== null && ! $user->isActive()) {
+            throw ValidationException::withMessages([
+                'email' => 'Your account is suspended or inactive.',
+            ]);
+        }
+
+        if ($user !== null && $user->session_id !== null) {
+            $user->forceFill(['session_id' => null])->save();
+        }
+
         if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => 'These credentials do not match our records.',
@@ -32,17 +50,9 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if (! $user->isActive()) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            throw ValidationException::withMessages([
-                'email' => 'Your account is suspended or inactive.',
-            ]);
-        }
-
         $request->session()->regenerate();
+
+        $user->forceFill(['session_id' => $request->session()->getId()])->save();
 
         if ($user->hasRole(UserRole::Admin, UserRole::Encoder, UserRole::BarangayOfficial, UserRole::Responder)) {
             return redirect()->intended(route('dashboard'));
@@ -67,11 +77,19 @@ class AuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
+        $user->forceFill(['session_id' => $request->session()->getId()])->save();
+
         return redirect()->route('report.create');
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user !== null) {
+            $user->forceFill(['session_id' => null])->save();
+        }
+
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

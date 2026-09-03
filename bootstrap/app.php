@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureSingleSession;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'active' => EnsureUserActive::class,
+            'single-session' => EnsureSingleSession::class,
             'role' => EnsureRole::class,
         ]);
     })
