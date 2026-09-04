@@ -28,6 +28,9 @@
                             </div>
                             <span class="chip chip-{{ $user->role->value }}">{{ $user->role->label() }}</span>
                             <span class="chip chip-{{ $user->status->value }}">{{ $user->status->label() }}</span>
+                            @if (isset($activeSessionIds[$user->id]))
+                                <span class="chip chip-active" title="Currently online with an active session">Online</span>
+                            @endif
                             <span class="text-xs text-muted transition-transform duration-150 group-open:rotate-90">&rsaquo;</span>
                         </summary>
 

@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -33,10 +34,17 @@ class UserController extends Controller
 
         $users = $query->latest()->paginate(15)->withQueryString();
 
+        $activeSessionIds = DB::table('sessions')
+            ->whereIn('user_id', $users->pluck('id'))
+            ->where('last_activity', '>', now()->subMinutes(config('session.lifetime'))->getTimestamp())
+            ->pluck('user_id')
+            ->flip();
+
         return view('dashboard.users', [
             'users' => $users,
             'roles' => UserRole::labels(),
             'statuses' => UserStatus::labels(),
+            'activeSessionIds' => $activeSessionIds,
         ]);
     }
 

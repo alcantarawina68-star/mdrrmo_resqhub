@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CallerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\PasswordConfirmController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -23,6 +24,11 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/confirm-password', [PasswordConfirmController::class, 'show'])->name('password.confirm');
+    Route::post('/confirm-password', [PasswordConfirmController::class, 'store'])->name('password.confirm.submit');
+});
+
 Route::middleware(['auth', 'active', 'single-session'])->group(function () {
     Route::get('/report', [IncidentController::class, 'create'])->name('report.create');
     Route::post('/report', [IncidentController::class, 'store'])->name('report.store');
@@ -35,16 +41,16 @@ Route::middleware(['auth', 'active', 'single-session', 'role:admin,encoder,baran
     Route::get('/incidents/{incident}', [DashboardController::class, 'show'])->name('dashboard.incidents.show');
 
     Route::middleware('role:admin,encoder')->group(function () {
-        Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->name('dashboard.incidents.verify');
-        Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->name('dashboard.incidents.status');
-        Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->name('dashboard.incidents.update');
+        Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->middleware('reauthenticate')->name('dashboard.incidents.verify');
+        Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
+        Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
 
         Route::get('/caller', [CallerController::class, 'create'])->name('dashboard.caller');
-        Route::post('/caller', [CallerController::class, 'store'])->name('dashboard.caller.store');
+        Route::post('/caller', [CallerController::class, 'store'])->middleware('reauthenticate')->name('dashboard.caller.store');
 
         Route::get('/announcements', [AnnouncementController::class, 'index'])->name('dashboard.announcements');
-        Route::post('/announcements', [AnnouncementController::class, 'store'])->name('dashboard.announcements.store');
-        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('dashboard.announcements.destroy');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('reauthenticate')->name('dashboard.announcements.store');
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.announcements.destroy');
 
         Route::get('/reports', [ReportController::class, 'index'])->name('dashboard.reports');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('dashboard.reports.export');
@@ -52,9 +58,9 @@ Route::middleware(['auth', 'active', 'single-session', 'role:admin,encoder,baran
 
         Route::middleware('role:admin')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');
-            Route::post('/users', [UserController::class, 'store'])->name('dashboard.users.store');
-            Route::post('/users/{user}', [UserController::class, 'update'])->name('dashboard.users.update');
-            Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('dashboard.users.destroy');
+            Route::post('/users', [UserController::class, 'store'])->middleware('reauthenticate')->name('dashboard.users.store');
+            Route::post('/users/{user}', [UserController::class, 'update'])->middleware('reauthenticate')->name('dashboard.users.update');
+            Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.users.destroy');
         });
     });
 });

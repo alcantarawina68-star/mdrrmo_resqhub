@@ -6,3 +6,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | bootstrap/app.php | .ai/rules/bootstrap.md |
 | resources/css/** | .ai/rules/css.md |
+| app/Http/Middleware/RequireReauthentication.php | .ai/rules/middleware.md |

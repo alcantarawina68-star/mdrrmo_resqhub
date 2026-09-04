@@ -42,7 +42,7 @@ class AuthController extends Controller
             $user->forceFill(['session_id' => null])->save();
         }
 
-        if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::guard('web')->attempt($credentials, false)) {
             throw ValidationException::withMessages([
                 'email' => 'These credentials do not match our records.',
             ]);

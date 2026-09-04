@@ -90,6 +90,10 @@
                             <a href="{{ route('dashboard.users') }}" class="nav-link">Users</a>
                         @endif
                     @endif
+                    <form method="POST" action="{{ route('logout') }}" class="mt-1">
+                        @csrf
+                        <button type="submit" class="btn btn-tertiary w-full justify-start">Log out</button>
+                    </form>
                 </nav>
             </div>
 

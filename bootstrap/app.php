@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\EnsureSingleSession;
 use App\Http\Middleware\EnsureUserActive;
+use App\Http\Middleware\RequireReauthentication;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'active' => EnsureUserActive::class,
+            'reauthenticate' => RequireReauthentication::class,
             'single-session' => EnsureSingleSession::class,
             'role' => EnsureRole::class,
         ]);
