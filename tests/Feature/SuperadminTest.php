@@ -38,16 +38,50 @@ test('a superadmin can access all dashboard pages', function () {
     actingAs($superadmin)->get('/dashboard')->assertOk();
 
     actingAs($superadmin)->get('/dashboard/incidents')->assertOk();
-    actingAs($superadmin)->get('/dashboard/caller')->assertOk();
-    actingAs($superadmin)->get('/dashboard/announcements')->assertOk();
     actingAs($superadmin)->get('/dashboard/users')->assertOk();
-    actingAs($superadmin)->get('/dashboard/reports')->assertOk();
+    actingAs($superadmin)->get('/dashboard/sessions')->assertOk();
 });
 
-test('a superadmin can access the sessions management page', function () {
+test('caller, announcements and reports are removed for the superadmin', function () {
     $superadmin = User::factory()->superadmin()->create();
 
-    actingAs($superadmin)->get('/dashboard/sessions')->assertOk();
+    actingAs($superadmin)->get('/dashboard/caller')->assertForbidden();
+    actingAs($superadmin)->get('/dashboard/announcements')->assertForbidden();
+    actingAs($superadmin)->get('/dashboard/reports')->assertForbidden();
+});
+
+test('caller, announcements and reports remain available for operators', function () {
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin)->get('/dashboard/caller')->assertOk();
+    actingAs($admin)->get('/dashboard/announcements')->assertOk();
+    actingAs($admin)->get('/dashboard/reports')->assertOk();
+});
+
+test('the superadmin overview shows user and session analytics', function () {
+    $superadmin = User::factory()->superadmin()->create();
+    $target = User::factory()->communityUser()->create();
+
+    superadminFakeSession('device-a', $target->id);
+    DB::table('sessions')->where('id', 'device-a')->update(['last_activity' => time()]);
+
+    actingAs($superadmin)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Total users')
+        ->assertSee('Online now')
+        ->assertSee('Online users')
+        ->assertSee('Users by role');
+});
+
+test('the operator overview does not show session analytics', function () {
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Incidents today')
+        ->assertDontSee('Online now');
 });
 
 test('a regular admin cannot access the sessions management page', function () {

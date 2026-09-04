@@ -46,17 +46,6 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
         Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
         Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
 
-        Route::get('/caller', [CallerController::class, 'create'])->name('dashboard.caller');
-        Route::post('/caller', [CallerController::class, 'store'])->middleware('reauthenticate')->name('dashboard.caller.store');
-
-        Route::get('/announcements', [AnnouncementController::class, 'index'])->name('dashboard.announcements');
-        Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('reauthenticate')->name('dashboard.announcements.store');
-        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.announcements.destroy');
-
-        Route::get('/reports', [ReportController::class, 'index'])->name('dashboard.reports');
-        Route::get('/reports/export', [ReportController::class, 'export'])->name('dashboard.reports.export');
-        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('dashboard.reports.export.pdf');
-
         Route::middleware('role:superadmin,admin')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');
             Route::post('/users', [UserController::class, 'store'])->middleware('reauthenticate')->name('dashboard.users.store');
@@ -69,5 +58,18 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
             Route::post('/sessions/{session}/terminate', [SessionManagementController::class, 'terminate'])->middleware('reauthenticate')->name('dashboard.sessions.terminate');
             Route::post('/sessions/users/{user}/logout', [SessionManagementController::class, 'logoutUser'])->middleware('reauthenticate')->name('dashboard.sessions.logout-user');
         });
+    });
+
+    Route::middleware('role:admin,encoder')->group(function () {
+        Route::get('/caller', [CallerController::class, 'create'])->name('dashboard.caller');
+        Route::post('/caller', [CallerController::class, 'store'])->middleware('reauthenticate')->name('dashboard.caller.store');
+
+        Route::get('/announcements', [AnnouncementController::class, 'index'])->name('dashboard.announcements');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('reauthenticate')->name('dashboard.announcements.store');
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.announcements.destroy');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('dashboard.reports');
+        Route::get('/reports/export', [ReportController::class, 'export'])->name('dashboard.reports.export');
+        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('dashboard.reports.export.pdf');
     });
 });

@@ -7,4 +7,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | bootstrap/app.php | .ai/rules/bootstrap.md |
 | app/Http/Controllers/UserController.php | .ai/rules/controllers.md |
 | resources/css/** | .ai/rules/css.md |
+| resources/views/components/layouts/dashboard.blade.php | .ai/rules/layouts.md |
 | app/Http/Middleware/RequireReauthentication.php | .ai/rules/middleware.md |

@@ -2,7 +2,7 @@
 
 @php
     $user = auth()->user();
-    $isOperations = $user->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder);
+    $isOperator = $user->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder);
     $isAdmin = $user->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin);
     $isSuperadmin = $user->hasRole(\App\Enums\UserRole::Superadmin);
 @endphp
@@ -31,18 +31,18 @@
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Overview</a>
                 <a href="{{ route('dashboard.incidents') }}" class="nav-link {{ request()->routeIs('dashboard.incidents*') && ! request()->routeIs('dashboard.incidents.show') ? 'nav-link-active' : '' }}">Incidents</a>
 
-                @if ($isOperations)
+                @if ($isOperator)
                     <a href="{{ route('dashboard.caller') }}" class="nav-link {{ request()->routeIs('dashboard.caller') ? 'nav-link-active' : '' }}">Caller Report</a>
                     <a href="{{ route('dashboard.announcements') }}" class="nav-link {{ request()->routeIs('dashboard.announcements') ? 'nav-link-active' : '' }}">Announcements</a>
                     <a href="{{ route('dashboard.reports') }}" class="nav-link {{ request()->routeIs('dashboard.reports') ? 'nav-link-active' : '' }}">Reports & Analytics</a>
+                @endif
 
-                    @if ($isAdmin)
-                        <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
-                    @endif
+                @if ($isAdmin)
+                    <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                @endif
 
-                    @if ($isSuperadmin)
-                        <a href="{{ route('dashboard.sessions') }}" class="nav-link {{ request()->routeIs('dashboard.sessions') ? 'nav-link-active' : '' }}">Sessions</a>
-                    @endif
+                @if ($isSuperadmin)
+                    <a href="{{ route('dashboard.sessions') }}" class="nav-link {{ request()->routeIs('dashboard.sessions') ? 'nav-link-active' : '' }}">Sessions</a>
                 @endif
             </nav>
 
@@ -87,17 +87,17 @@
                 <nav class="flex flex-col gap-1 p-3">
                     <a href="{{ route('dashboard') }}" class="nav-link">Overview</a>
                     <a href="{{ route('dashboard.incidents') }}" class="nav-link">Incidents</a>
-                    @if ($isOperations)
+                    @if ($isOperator)
                         <a href="{{ route('dashboard.caller') }}" class="nav-link">Caller Report</a>
                         <a href="{{ route('dashboard.announcements') }}" class="nav-link">Announcements</a>
                         <a href="{{ route('dashboard.reports') }}" class="nav-link">Reports & Analytics</a>
-                        @if ($isAdmin)
-                            <a href="{{ route('dashboard.users') }}" class="nav-link">Users</a>
-                        @endif
+                    @endif
+                    @if ($isAdmin)
+                        <a href="{{ route('dashboard.users') }}" class="nav-link">Users</a>
+                    @endif
 
-                        @if ($isSuperadmin)
-                            <a href="{{ route('dashboard.sessions') }}" class="nav-link">Sessions</a>
-                        @endif
+                    @if ($isSuperadmin)
+                        <a href="{{ route('dashboard.sessions') }}" class="nav-link">Sessions</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="mt-1">
                         @csrf
