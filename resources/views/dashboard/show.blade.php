@@ -157,6 +157,7 @@
                         zoom: 15,
                         zoomControl: false,
                         attributionControl: false,
+                        showDetailsLink: false,
                     });
                     map.addIncident(@js([
                         'latitude' => $incident->latitude,

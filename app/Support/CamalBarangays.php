@@ -3,21 +3,18 @@
 namespace App\Support;
 
 /**
- * Real barangays of Camalig, Albay (the municipality formerly known as Camal).
+ * Real barangays of Camalaniugan, Cagayan (Region II - Cagayan Valley).
  *
- * Source: PSA 2010 Census of Population and Housing for Albay.
+ * Source: PSA Census of Population and Housing for Cagayan.
  */
 final class CamalBarangays
 {
     public const ALL = [
-        'Anoling', 'Baligang', 'Bantonan', 'Bariw', 'Binanderahan', 'Binitayan', 'Bongabong',
-        'Cabagñan', 'Cabraran Pequeño', 'Caguiba', 'Calabidongan', 'Comun', 'Cotmon',
-        'Del Rosario', 'Gapo', 'Gotob', 'Ilawod', 'Iluluan', 'Libod', 'Ligban', 'Mabunga',
-        'Magogon', 'Manawan', 'Maninila', 'Mina', 'Miti', 'Palanog', 'Panoypoy', 'Pariaan',
-        'Quinartilan', 'Quirangay', 'Quitinday', 'Salugan', 'Solong', 'Sua', 'Sumlang',
-        'Tagaytay', 'Tagoytoy', 'Taladong', 'Taloto', 'Taplacon', 'Tinago', 'Tumpa',
-        'Barangay 1 (Pob.)', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)', 'Barangay 4 (Pob.)',
-        'Barangay 5 (Pob.)', 'Barangay 6 (Pob.)', 'Barangay 7 (Pob.)',
+        'Abagao', 'Afunan Cabayu', 'Agusi', 'Alilinu', 'Baggao', 'Bantay',
+        'Bulala', 'Casili Norte', 'Casili Sur', 'Catotoran Norte', 'Catotoran Sur',
+        'Centro Norte', 'Centro Sur', 'Cullit', 'Dacal-Lafugu', 'Dammang Norte',
+        'Dammang Sur', 'Dugo', 'Fusina', 'Gang-ngo', 'Jurisdiction', 'Luec', 'Minanga',
+        'Paragat', 'Sapping', 'Tagum', 'Tuluttuging', 'Ziminila',
     ];
 
     /**

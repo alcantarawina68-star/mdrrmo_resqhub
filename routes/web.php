@@ -48,6 +48,7 @@ Route::middleware(['auth', 'active', 'single-session', 'role:admin,encoder,baran
 
         Route::get('/reports', [ReportController::class, 'index'])->name('dashboard.reports');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('dashboard.reports.export');
+        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('dashboard.reports.export.pdf');
 
         Route::middleware('role:admin')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');

@@ -1,8 +1,9 @@
 export function createIncidentMap(element, options = {}) {
     const { onSelect } = options;
+    const showDetailsLink = options.showDetailsLink ?? true;
 
     const map = L.map(element, {
-        center: options.center ?? [13.181, 123.655],
+        center: options.center ?? [18.275, 121.675],
         zoom: options.zoom ?? 13,
         zoomControl: options.zoomControl ?? true,
         attributionControl: options.attributionControl ?? true,
@@ -86,13 +87,15 @@ export function createIncidentMap(element, options = {}) {
             const actions = document.createElement('div');
             actions.style.marginTop = '8px';
 
-            const link = document.createElement('a');
-            link.href = `/incidents/${incident.id}`;
-            link.textContent = 'View details';
-            link.style.color = 'var(--color-primary)';
-            link.style.fontWeight = '500';
+            if (showDetailsLink && incident.id) {
+                const link = document.createElement('a');
+                link.href = `/incidents/${incident.id}`;
+                link.textContent = 'View details';
+                link.style.color = 'var(--color-primary)';
+                link.style.fontWeight = '500';
 
-            actions.append(link);
+                actions.append(link);
+            }
 
             el.append(meta, title, desc, actions);
 

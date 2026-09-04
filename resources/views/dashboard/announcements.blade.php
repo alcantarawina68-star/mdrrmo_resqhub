@@ -1,5 +1,5 @@
 <x-layouts.dashboard title="Announcements">
-    <div class="grid gap-6 lg:grid-cols-3">
+    <div class="grid gap-6 lg:grid-cols-3" x-data="announcementsPage()">
         <div class="lg:col-span-2">
             <div class="mb-3 flex items-center justify-between">
                 <h2 class="text-base font-semibold text-fg">Published announcements</h2>
@@ -21,10 +21,15 @@
                                 <p class="mt-1 text-xs text-muted">Expires {{ $announcement->expires_at->format('M j, Y') }}</p>
                             @endif
                         </div>
-                        <form method="POST" action="{{ route('dashboard.announcements.destroy', $announcement) }}" class="shrink-0" onsubmit="return confirm('Delete this announcement?')">
+                        <button type="button" class="btn btn-tertiary shrink-0 text-danger"
+                            @click="confirmDelete({{ $announcement->id }}, '{{ $announcement->title }}')"
+                            aria-haspopup="dialog">
+                            Delete
+                        </button>
+                        <form id="delete-announcement-{{ $announcement->id }}" method="POST"
+                            action="{{ route('dashboard.announcements.destroy', $announcement) }}" class="hidden">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-tertiary text-danger">Delete</button>
                         </form>
                     </article>
                 @empty
@@ -76,5 +81,56 @@
                 <button type="submit" class="btn btn-primary w-full">Publish</button>
             </form>
         </div>
+
+        <template x-teleport="body">
+            <div x-show="show" x-cloak x-transition.opacity
+                class="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4">
+                <div x-show="show" x-transition @click.self="cancel()" @keydown.escape.window="cancel()"
+                    class="w-full max-w-md rounded-lg border border-border bg-surface p-6 shadow-lg" role="dialog"
+                    aria-modal="true" aria-labelledby="delete-dialog-title">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <h2 id="delete-dialog-title" class="text-base font-semibold text-fg">Delete announcement</h2>
+                            <p class="mt-1 text-sm text-muted">
+                                Are you sure you want to delete
+                                <span class="font-medium text-fg" x-text="'“' + pendingTitle + '”'"></span>?
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button" class="btn btn-tertiary" @click="cancel()">Cancel</button>
+                        <button type="button" class="btn btn-danger" @click="submit()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('announcementsPage', () => ({
+                show: false,
+                pendingId: null,
+                pendingTitle: '',
+                confirmDelete(id, title) {
+                    this.pendingId = id;
+                    this.pendingTitle = title;
+                    this.show = true;
+                },
+                cancel() {
+                    this.show = false;
+                    this.pendingId = null;
+                },
+                submit() {
+                    if (!this.pendingId) return;
+                    const form = document.getElementById('delete-announcement-' + this.pendingId);
+                    if (form) form.submit();
+                },
+            }));
+        });
+    </script>
 </x-layouts.dashboard>

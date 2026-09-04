@@ -10,7 +10,7 @@ use function Pest\Laravel\getJson;
 
 $payload = [
     'title' => 'Typhoon Prep Alert',
-    'content' => 'Residents of Camalig are advised to prepare emergency kits ahead of the approaching storm.',
+    'content' => 'Residents of Camalaniugan are advised to prepare emergency kits ahead of the approaching storm.',
     'category' => AnnouncementCategory::Warning->value,
     'severity' => Severity::Urgent->value,
 ];

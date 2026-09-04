@@ -57,14 +57,14 @@ test('the trend endpoint returns a daily series', function () {
 
 test('the barangay breakdown endpoint returns sorted counts', function () {
     $admin = User::factory()->admin()->create();
-    Incident::factory()->verified()->create(['location_label' => 'Caguiba']);
-    Incident::factory()->verified()->create(['location_label' => 'Caguiba']);
-    Incident::factory()->verified()->create(['location_label' => 'Sumlang']);
+    Incident::factory()->verified()->create(['location_label' => 'Dugo']);
+    Incident::factory()->verified()->create(['location_label' => 'Dugo']);
+    Incident::factory()->verified()->create(['location_label' => 'Agusi']);
 
     actingAs($admin, 'sanctum')->getJson('/api/v1/reports/barangays')
         ->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.0.barangay', 'Caguiba')
+        ->assertJsonPath('data.0.barangay', 'Dugo')
         ->assertJsonPath('data.0.total', 2);
 });
 
@@ -88,14 +88,14 @@ test('only admins can export the report CSV', function () {
 test('the CSV export includes a BOM and column headers', function () {
     Incident::factory()->verified()->create([
         'description' => 'A minor flood along the national road for the CSV export.',
-        'location_label' => 'Caguiba',
+        'location_label' => 'Dugo',
     ]);
 
     $csv = app(ReportService::class)->exportCsv([]);
 
     expect(str_starts_with($csv, "\xEF\xBB\xBF"))->toBeTrue();
     expect($csv)->toContain('Incident No.');
-    expect($csv)->toContain('Caguiba');
+    expect($csv)->toContain('Dugo');
     expect($csv)->toContain('RQ-');
 });
 

@@ -12,9 +12,9 @@ use function Pest\Laravel\getJson;
 $validPayload = [
     'incident_type' => IncidentType::Fire->value,
     'description' => 'A house fire was spotted along the road near the chapel.',
-    'latitude' => 13.1805,
-    'longitude' => 123.6691,
-    'location_label' => 'Caguiba',
+    'latitude' => 18.2756,
+    'longitude' => 121.6756,
+    'location_label' => 'Minanga',
     'priority' => Priority::High->value,
     'contact_number' => '09171234567',
 ];
@@ -219,10 +219,10 @@ test('an operator can update incident details', function () {
     actingAs($admin, 'sanctum')
         ->patchJson("/api/v1/incidents/{$incident->id}", [
             'description' => 'Updated report with a longer verified description.',
-            'location_label' => 'Sumlang',
+            'location_label' => 'Agusi',
         ])
         ->assertStatus(200)
-        ->assertJsonPath('data.location_label', 'Sumlang');
+        ->assertJsonPath('data.location_label', 'Agusi');
 });
 
 test('only an admin can delete an incident', function () {
@@ -242,7 +242,7 @@ test('only an admin can delete an incident', function () {
 });
 
 test('barangay filter is validated against the known list', function () {
-    Incident::factory()->verified()->create(['location_label' => 'Caguiba']);
+    Incident::factory()->verified()->create(['location_label' => 'Dugo']);
 
     getJson('/api/v1/incidents?barangay=Not-A-Barangay')
         ->assertStatus(200)

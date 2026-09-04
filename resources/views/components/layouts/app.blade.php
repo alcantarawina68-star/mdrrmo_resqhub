@@ -17,7 +17,7 @@
                 <span class="flex h-9 w-9 items-center justify-center bg-primary text-sm font-bold tracking-tight text-white">RQ</span>
                 <span class="leading-tight">
                     <span class="block text-base font-semibold text-fg">ResQHub</span>
-                    <span class="block text-xs text-muted">MDRRMO Camalig</span>
+                    <span class="block text-xs text-muted">MDRRMO Camalaniugan</span>
                 </span>
             </a>
 
@@ -168,7 +168,7 @@
 
     <footer class="mt-16 border-t border-border bg-surface py-6 pb-24 lg:pb-6">
         <div class="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 text-xs text-muted sm:px-6 md:flex-row md:items-center md:justify-between">
-            <p>ResQHub · Municipal Disaster Risk Reduction and Management Office · Camalig, Albay</p>
+            <p>ResQHub · Municipal Disaster Risk Reduction and Management Office · Camalaniugan, Cagayan</p>
             <p class="mono">Emergency hotline: 0917 123 4567 · resqhub.ph</p>
         </div>
     </footer>

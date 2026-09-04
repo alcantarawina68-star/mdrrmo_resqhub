@@ -91,7 +91,7 @@
                     if (!el) return;
 
                     const map = L.map(el, {
-                        center: [13.181, 123.655],
+                        center: [18.275, 121.675],
                         zoom: 14,
                         scrollWheelZoom: false,
                     });

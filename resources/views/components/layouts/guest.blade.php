@@ -16,7 +16,7 @@
                 <span class="flex h-11 w-11 items-center justify-center bg-primary text-base font-bold text-white">RQ</span>
                 <span>
                     <span class="block text-xl font-semibold text-fg">ResQHub</span>
-                    <span class="block text-xs text-muted">MDRRMO Camalig</span>
+                    <span class="block text-xs text-muted">MDRRMO Camalaniugan</span>
                 </span>
             </a>
             <button type="button" class="btn btn-tertiary !px-2" aria-label="Toggle dark mode"

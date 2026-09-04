@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\ReportService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -30,5 +31,13 @@ class ReportController extends Controller
         return response()->streamDownload(function () use ($request) {
             echo $this->reports->exportCsv($request->all());
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        $filename = 'resqhub-incidents-'.now()->format('Ymd-His').'.pdf';
+
+        return $this->reports->exportPdf($request->all())
+            ->download($filename);
     }
 }

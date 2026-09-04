@@ -79,6 +79,7 @@
                         zoom: 15,
                         zoomControl: false,
                         attributionControl: false,
+                        showDetailsLink: false,
                     });
                     const marker = map.addIncident({ ...incident, status_label: '{{ $incident->status->label() }}' });
                     marker.openPopup();

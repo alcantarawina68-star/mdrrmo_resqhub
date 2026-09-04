@@ -64,6 +64,20 @@ test('an admin can access all dashboard pages', function () {
     actingAs($admin)->get('/dashboard/reports')->assertOk();
 });
 
+test('an admin can export the report as PDF and CSV', function () {
+    $admin = User::factory()->admin()->create();
+    Incident::factory()->verified()->create(['location_label' => 'Dugo']);
+
+    actingAs($admin)->get(route('dashboard.reports.export.pdf'))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition');
+
+    actingAs($admin)->get(route('dashboard.reports.export'))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+});
+
 test('an inactive user is redirected from authenticated pages', function () {
     $user = User::factory()->inactive()->create();
 

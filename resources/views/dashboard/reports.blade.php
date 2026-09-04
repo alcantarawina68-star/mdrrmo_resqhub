@@ -14,7 +14,10 @@
                 <a href="{{ route('dashboard.reports') }}" class="btn btn-tertiary">Clear</a>
             @endif
         </form>
-        <a href="{{ route('dashboard.reports.export', request()->query()) }}" class="btn btn-secondary">Export CSV</a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('dashboard.reports.export', request()->query()) }}" class="btn btn-secondary">Export CSV</a>
+            <a href="{{ route('dashboard.reports.export.pdf', request()->query()) }}" class="btn btn-secondary">Export PDF</a>
+        </div>
     </div>
 
     <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
@@ -31,10 +34,10 @@
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         <div class="border border-border bg-surface p-5">
             <p class="panel-title mb-4">Daily trend (last 30 days)</p>
-            <div class="flex h-40 items-end gap-px sm:h-48 sm:gap-1">
+            <div class="flex h-40 gap-px sm:h-48 sm:gap-1">
                 @php($max = max(1, collect($trend)->max('total')))
                 @foreach ($trend as $day)
-                    <div class="group relative flex-1" title="{{ $day['label'] }}: {{ $day['total'] }}">
+                    <div class="group relative flex-1 flex flex-col justify-end" title="{{ $day['label'] }}: {{ $day['total'] }}">
                         <div class="bg-primary/70 transition-colors duration-150 hover:bg-primary" style="height: {{ max(2, round(($day['total'] / $max) * 100)) }}%"></div>
                     </div>
                 @endforeach

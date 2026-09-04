@@ -15,13 +15,13 @@ test('a visitor can register as a community user', function () {
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'contact_number' => '09171234567',
-        'barangay' => 'Quitinday',
+        'barangay' => 'Minanga',
     ]);
 
     $response->assertStatus(201)
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.user.role', UserRole::CommunityUser->value)
-        ->assertJsonPath('data.user.barangay', 'Quitinday')
+        ->assertJsonPath('data.user.barangay', 'Minanga')
         ->assertJsonStructure(['data' => ['token', 'user' => ['id', 'name', 'email', 'role']]]);
 
     expect(User::count())->toBe(1);

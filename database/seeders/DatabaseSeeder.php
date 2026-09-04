@@ -80,8 +80,8 @@ class DatabaseSeeder extends Seeder
 
         Announcement::create([
             'user_id' => $admin->id,
-            'title' => 'Heavy Rainfall Advisory - Camalig',
-            'content' => 'PAGASA reports moderate to heavy rains over Camalig within the next 24 hours. Low-lying barangays near Mayon may experience minor flooding. Monitor advisories and prepare for possible evacuation.',
+            'title' => 'Heavy Rainfall Advisory - Camalaniugan',
+            'content' => 'PAGASA reports moderate to heavy rains over Camalaniugan within the next 24 hours. Low-lying barangays near the Cagayan River may experience minor flooding. Monitor advisories and prepare for possible evacuation.',
             'category' => AnnouncementCategory::Warning,
             'severity' => Severity::Urgent,
             'published_at' => now(),
@@ -91,7 +91,7 @@ class DatabaseSeeder extends Seeder
         SmsMessage::insert([
             [
                 'phone' => '09171230002',
-                'message' => 'ResQHub: New typhoon_flood report (RQ-'.now()->year.'-1000) at Sumlang. Verify and assign a unit.',
+                'message' => 'ResQHub: New typhoon_flood report (RQ-'.now()->year.'-1000) at Minanga. Verify and assign a unit.',
                 'status' => 'sent',
                 'attempts' => 1,
                 'error' => null,
@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'phone' => '09171230003',
-                'message' => 'ResQHub: Assignment - RQ-'.now()->year.'-1000 (Typhoon / Flood) at Sumlang assigned to Rescue 117.',
+                'message' => 'ResQHub: Assignment - RQ-'.now()->year.'-1000 (Typhoon / Flood) at Minanga assigned to Rescue 117.',
                 'status' => 'sent',
                 'attempts' => 1,
                 'error' => null,

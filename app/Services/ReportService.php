@@ -7,6 +7,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Enums\Priority;
 use App\Models\Incident;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -121,29 +122,7 @@ class ReportService
      */
     public function exportCsv(array $filters): string
     {
-        $query = Incident::query()->with('reporter:id,name');
-
-        foreach ($filters as $column => $value) {
-            if (blank($value)) {
-                continue;
-            }
-
-            if ($column === 'from') {
-                $query->where('reported_at', '>=', Carbon::parse($value)->startOfDay());
-
-                continue;
-            }
-
-            if ($column === 'to') {
-                $query->where('reported_at', '<=', Carbon::parse($value)->endOfDay());
-
-                continue;
-            }
-
-            $query->where($column, $value);
-        }
-
-        $rows = $query->orderByDesc('reported_at')->get();
+        $rows = $this->filteredIncidents($filters);
 
         $handle = fopen('php://temp', 'r+');
         fwrite($handle, "\xEF\xBB\xBF");
@@ -174,6 +153,56 @@ class ReportService
         fclose($handle);
 
         return $csv;
+    }
+
+    /**
+     * Build a PDF export of incidents matching the given filters.
+     *
+     * @param  array<int|string, mixed>  $filters
+     */
+    public function exportPdf(array $filters): \Barryvdh\DomPDF\PDF
+    {
+        $rows = $this->filteredIncidents($filters);
+
+        return Pdf::loadView('dashboard.reports-pdf', [
+            'incidents' => $rows,
+            'from' => $filters['from'] ?? null,
+            'to' => $filters['to'] ?? null,
+            'generatedAt' => now(),
+        ]);
+    }
+
+    /**
+     * Return incidents matching the given export filters.
+     *
+     * @param  array<int|string, mixed>  $filters
+     * @return \Illuminate\Database\Eloquent\Collection<int, Incident>
+     */
+    private function filteredIncidents(array $filters)
+    {
+        $query = Incident::query()->with('reporter:id,name');
+
+        foreach ($filters as $column => $value) {
+            if (blank($value)) {
+                continue;
+            }
+
+            if ($column === 'from') {
+                $query->where('reported_at', '>=', Carbon::parse($value)->startOfDay());
+
+                continue;
+            }
+
+            if ($column === 'to') {
+                $query->where('reported_at', '<=', Carbon::parse($value)->endOfDay());
+
+                continue;
+            }
+
+            $query->where($column, $value);
+        }
+
+        return $query->orderByDesc('reported_at')->get();
     }
 
     /**

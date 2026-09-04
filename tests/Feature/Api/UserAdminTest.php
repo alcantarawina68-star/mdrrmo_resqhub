@@ -52,7 +52,7 @@ test('an admin can create a user', function () {
             'role' => UserRole::Responder->value,
             'status' => UserStatus::Active->value,
             'contact_number' => '09171112222',
-            'barangay' => 'Anoling',
+            'barangay' => 'Bulala',
         ])
         ->assertStatus(201)
         ->assertJsonPath('data.role', UserRole::Responder->value)
