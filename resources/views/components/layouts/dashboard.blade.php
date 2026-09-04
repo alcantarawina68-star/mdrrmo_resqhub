@@ -2,8 +2,9 @@
 
 @php
     $user = auth()->user();
-    $isOperations = $user->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder);
-    $isAdmin = $user->hasRole(\App\Enums\UserRole::Admin);
+    $isOperations = $user->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder);
+    $isAdmin = $user->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin);
+    $isSuperadmin = $user->hasRole(\App\Enums\UserRole::Superadmin);
 @endphp
 
 <!DOCTYPE html>
@@ -37,6 +38,10 @@
 
                     @if ($isAdmin)
                         <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                    @endif
+
+                    @if ($isSuperadmin)
+                        <a href="{{ route('dashboard.sessions') }}" class="nav-link {{ request()->routeIs('dashboard.sessions') ? 'nav-link-active' : '' }}">Sessions</a>
                     @endif
                 @endif
             </nav>
@@ -88,6 +93,10 @@
                         <a href="{{ route('dashboard.reports') }}" class="nav-link">Reports & Analytics</a>
                         @if ($isAdmin)
                             <a href="{{ route('dashboard.users') }}" class="nav-link">Users</a>
+                        @endif
+
+                        @if ($isSuperadmin)
+                            <a href="{{ route('dashboard.sessions') }}" class="nav-link">Sessions</a>
                         @endif
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="mt-1">

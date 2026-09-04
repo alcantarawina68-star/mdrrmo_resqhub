@@ -8,6 +8,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\PasswordConfirmController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SessionManagementController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,12 +36,12 @@ Route::middleware(['auth', 'active', 'single-session'])->group(function () {
     Route::get('/my-reports', [IncidentController::class, 'myReports'])->name('my-reports');
 });
 
-Route::middleware(['auth', 'active', 'single-session', 'role:admin,encoder,barangay_official,responder'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,encoder,barangay_official,responder'])->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/incidents', [DashboardController::class, 'incidents'])->name('dashboard.incidents');
     Route::get('/incidents/{incident}', [DashboardController::class, 'show'])->name('dashboard.incidents.show');
 
-    Route::middleware('role:admin,encoder')->group(function () {
+    Route::middleware('role:superadmin,admin,encoder')->group(function () {
         Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->middleware('reauthenticate')->name('dashboard.incidents.verify');
         Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
         Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
@@ -56,11 +57,17 @@ Route::middleware(['auth', 'active', 'single-session', 'role:admin,encoder,baran
         Route::get('/reports/export', [ReportController::class, 'export'])->name('dashboard.reports.export');
         Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('dashboard.reports.export.pdf');
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware('role:superadmin,admin')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');
             Route::post('/users', [UserController::class, 'store'])->middleware('reauthenticate')->name('dashboard.users.store');
             Route::post('/users/{user}', [UserController::class, 'update'])->middleware('reauthenticate')->name('dashboard.users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.users.destroy');
+        });
+
+        Route::middleware('role:superadmin')->group(function () {
+            Route::get('/sessions', [SessionManagementController::class, 'index'])->name('dashboard.sessions');
+            Route::post('/sessions/{session}/terminate', [SessionManagementController::class, 'terminate'])->middleware('reauthenticate')->name('dashboard.sessions.terminate');
+            Route::post('/sessions/users/{user}/logout', [SessionManagementController::class, 'logoutUser'])->middleware('reauthenticate')->name('dashboard.sessions.logout-user');
         });
     });
 });

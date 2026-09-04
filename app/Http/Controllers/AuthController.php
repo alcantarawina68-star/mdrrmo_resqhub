@@ -54,7 +54,7 @@ class AuthController extends Controller
 
         $user->forceFill(['session_id' => $request->session()->getId()])->save();
 
-        if ($user->hasRole(UserRole::Admin, UserRole::Encoder, UserRole::BarangayOfficial, UserRole::Responder)) {
+        if ($user->hasRole(UserRole::Superadmin, UserRole::Admin, UserRole::Encoder, UserRole::BarangayOfficial, UserRole::Responder)) {
             return redirect()->intended(route('dashboard'));
         }
 

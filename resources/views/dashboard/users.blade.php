@@ -11,6 +11,9 @@
                     <select id="role" name="role" class="select">
                         <option value="">All roles</option>
                         @foreach ($roles as $value => $label)
+                            @if ($value === \App\Enums\UserRole::Superadmin->value && ! $canManageSuperadmins)
+                                @continue
+                            @endif
                             <option value="{{ $value }}" @selected(request('role') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -46,15 +49,18 @@
                             </div>
                             <div class="field">
                                 <label class="label" for="role-{{ $user->id }}">Role</label>
-                                <select id="role-{{ $user->id }}" name="role" class="select" {{ $user->is(auth()->user()) ? 'disabled' : '' }}>
+                                <select id="role-{{ $user->id }}" name="role" class="select" {{ $user->is(auth()->user()) || ($user->isSuperadmin() && ! $canManageSuperadmins) ? 'disabled' : '' }}>
                                     @foreach ($roles as $value => $label)
+                                        @if ($value === \App\Enums\UserRole::Superadmin->value && ! $canManageSuperadmins)
+                                            @continue
+                                        @endif
                                         <option value="{{ $value }}" @selected($user->role->value === $value)>{{ $label }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="field">
                                 <label class="label" for="status-{{ $user->id }}">Status</label>
-                                <select id="status-{{ $user->id }}" name="status" class="select" {{ $user->is(auth()->user()) ? 'disabled' : '' }}>
+                                <select id="status-{{ $user->id }}" name="status" class="select" {{ $user->is(auth()->user()) || ($user->isSuperadmin() && ! $canManageSuperadmins) ? 'disabled' : '' }}>
                                     @foreach ($statuses as $value => $label)
                                         <option value="{{ $value }}" @selected($user->status->value === $value)>{{ $label }}</option>
                                     @endforeach
@@ -66,13 +72,13 @@
                             </div>
                             <div class="flex items-center gap-2 sm:col-span-2">
                                 <button type="submit" class="btn btn-secondary">Save</button>
-                                @if (! $user->is(auth()->user()))
+                                @if (! $user->is(auth()->user()) && ! ($user->isSuperadmin() && ! $canManageSuperadmins))
                                     <a href="#" class="btn btn-tertiary text-danger" onclick="event.preventDefault(); document.getElementById('delete-{{ $user->id }}').submit();">Delete</a>
                                 @endif
                             </div>
                         </form>
 
-                        @if (! $user->is(auth()->user()))
+                        @if (! $user->is(auth()->user()) && ! ($user->isSuperadmin() && ! $canManageSuperadmins))
                             <form id="delete-{{ $user->id }}" method="POST" action="{{ route('dashboard.users.destroy', $user) }}" class="hidden" onsubmit="return confirm('Delete this account?')">
                                 @csrf
                                 @method('DELETE')
@@ -111,6 +117,9 @@
                     <label class="label" for="role">Role</label>
                     <select id="role" name="role" class="select" required>
                         @foreach ($roles as $value => $label)
+                            @if ($value === \App\Enums\UserRole::Superadmin->value && ! $canManageSuperadmins)
+                                @continue
+                            @endif
                             <option value="{{ $value }}" @selected(old('role', 'community_user') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>

@@ -26,7 +26,7 @@
                 <a href="{{ route('advisories') }}" class="nav-link {{ request()->routeIs('advisories') ? 'nav-link-active' : '' }}">Advisories</a>
 
                 @auth
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard*') ? 'nav-link-active' : '' }}">Operations</a>
                     @endif
                 @endauth
@@ -83,7 +83,7 @@
                 @auth
                     <a href="{{ route('report.create') }}" class="nav-link">Submit Report</a>
                     <a href="{{ route('my-reports') }}" class="nav-link">My Reports</a>
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
                         <a href="{{ route('dashboard') }}" class="nav-link">Operations</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="mt-1">
