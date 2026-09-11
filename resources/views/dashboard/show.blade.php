@@ -86,8 +86,11 @@
                             <textarea id="verify-notes" name="notes" rows="3" class="textarea" placeholder="How was this verified?"></textarea>
                         </div>
                         <div class="field">
-                            <label class="label" for="verify-unit">Assigned unit <span class="normal-case">(required to approve)</span></label>
-                            <input id="verify-unit" type="text" name="assigned_unit" class="input" placeholder="Rescue 117">
+                            <label class="label {{ $errors->has('assigned_unit') ? 'text-danger' : '' }}" for="verify-unit">Assigned unit <span class="normal-case">(required to approve)</span></label>
+                            <input id="verify-unit" type="text" name="assigned_unit" class="input {{ $errors->has('assigned_unit') ? 'border-danger focus:border-danger' : '' }}" placeholder="Rescue 117" value="{{ old('assigned_unit') }}" @error('assigned_unit') aria-invalid="true" aria-describedby="verify-unit-error" autofocus @enderror>
+                            @error('assigned_unit')
+                                <p id="verify-unit-error" class="text-xs font-medium text-danger" role="alert">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div class="flex gap-2">
                             <button type="submit" name="action" value="approve" class="btn btn-primary">Approve</button>
