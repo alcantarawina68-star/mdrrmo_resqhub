@@ -4,7 +4,7 @@
         x-data="mapPage()"
         @keydown.escape.window="selected = null; $store.bottomSheet.close()"
     >
-        <div class="relative min-h-[45vh] flex-1 sm:min-h-[55vh] lg:min-h-0">
+        <div class="relative isolate min-h-[45vh] flex-1 sm:min-h-[55vh] lg:min-h-0">
             <div id="incident-map" class="absolute inset-0" role="application" aria-label="Incident map"></div>
 
             <div x-show="loading" x-cloak class="absolute inset-0 z-[500] flex items-center justify-center bg-bg text-muted">
@@ -22,7 +22,7 @@
             </div>
 
             <div x-show="selected" x-cloak
-                class="absolute bottom-4 left-4 z-[600] w-[calc(100%-2rem)] max-w-sm border border-border bg-surface p-3 shadow-lg sm:left-4 sm:p-4">
+                class="absolute bottom-20 left-4 z-[600] w-[calc(100%-2rem)] max-w-sm border border-border bg-surface p-3 shadow-lg sm:left-4 sm:p-4 lg:bottom-4">
                 <template x-if="selected">
                     <div>
                         <div class="flex items-center gap-2">
@@ -38,7 +38,7 @@
             </div>
 
             <button type="button"
-                class="absolute bottom-4 right-4 z-[600] flex h-12 items-center gap-2 border border-border bg-surface px-4 text-sm font-medium shadow-lg lg:hidden"
+                class="absolute right-4 top-4 z-[600] flex h-12 items-center gap-2 border border-border bg-surface px-4 text-sm font-medium shadow-lg lg:hidden"
                 x-data @click="$store.bottomSheet.toggle()">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 <span>Filters</span>
@@ -137,7 +137,7 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0">
             <div class="absolute inset-0 bg-black/50" @click="$store.bottomSheet.close()"></div>
-            <div class="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto border-t border-border bg-surface"
+            <div class="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto border-t border-border bg-surface pb-20"
                 x-transition:enter="transition duration-300 ease-out"
                 x-transition:enter-start="translate-y-full"
                 x-transition:enter-end="translate-y-0"
