@@ -22,7 +22,7 @@
                             <th class="table-head">Incident</th>
                             <th class="table-head hidden sm:table-cell">Reported</th>
                             <th class="table-head">Status</th>
-                            <th class="table-head hidden md:table-cell"></th>
+                            <th class="table-head"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -39,9 +39,9 @@
                                 <td class="table-cell">
                                     <x-status-chip :status="$incident->status" />
                                 </td>
-                                <td class="table-cell hidden text-right md:table-cell">
+                                <td class="table-cell text-right">
                                     @if (in_array($incident->status->value, \App\Enums\IncidentStatus::publiclyVisibleValues(), true))
-                                        <a href="{{ route('incidents.show', $incident) }}" class="btn btn-tertiary !px-1">View</a>
+                                        <a href="{{ route('incidents.show', $incident) }}" class="btn btn-tertiary !px-1" aria-label="View {{ $incident->incident_type->label() }}">View</a>
                                     @else
                                         <span class="text-xs text-muted">Not public yet</span>
                                     @endif

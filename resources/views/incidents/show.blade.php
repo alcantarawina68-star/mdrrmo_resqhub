@@ -52,9 +52,16 @@
                         <h3 class="mb-2">Attached evidence</h3>
                         <ul class="divide-y divide-border border border-border bg-surface">
                             @foreach ($incident->evidence as $item)
-                                <li class="flex items-center justify-between gap-4 px-4 py-3 text-sm">
-                                    <span class="truncate">{{ $item->original_name }}</span>
-                                    <span class="mono shrink-0 text-xs text-muted">{{ number_format($item->file_size / 1024, 1) }} KB</span>
+                                <li class="text-sm">
+                                    <a href="{{ asset('storage/'.$item->file_path) }}" download="{{ $item->original_name }}"
+                                        class="flex items-center justify-between gap-4 px-4 py-3 no-underline transition-colors duration-150 hover:bg-bg"
+                                        aria-label="Download {{ $item->original_name }}">
+                                        <span class="truncate">{{ $item->original_name }}</span>
+                                        <span class="flex shrink-0 items-center gap-2">
+                                            <span class="mono text-xs text-muted">{{ number_format($item->file_size / 1024, 1) }} KB</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                        </span>
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>

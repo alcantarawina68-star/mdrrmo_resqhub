@@ -22,7 +22,11 @@
             </div>
 
             <div x-show="selected" x-cloak
-                class="absolute bottom-20 left-4 z-[600] w-[calc(100%-2rem)] max-w-sm border border-border bg-surface p-3 shadow-lg sm:left-4 sm:p-4 lg:bottom-4">
+                class="absolute bottom-20 left-4 z-[600] w-[calc(100%-2rem)] max-w-sm border border-border bg-surface p-3 shadow-lg sm:left-4 sm:p-4 lg:bottom-4 relative">
+                <button type="button" class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center text-muted hover:text-fg"
+                    @click="selected = null" aria-label="Close details">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
                 <template x-if="selected">
                     <div>
                         <div class="flex items-center gap-2">

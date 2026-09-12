@@ -10,12 +10,18 @@
 
             <div class="lg:col-span-3">
                 <div class="field">
-                    <label class="label" for="report-map">Pin the location</label>
+                    <div class="flex items-center justify-between">
+                        <label class="label" for="report-map">Pin the location</label>
+                        <button type="button" class="btn btn-tertiary !px-1 !text-xs" :disabled="locating" @click="useMyLocation()">
+                            Use my location
+                        </button>
+                    </div>
                     <div id="report-map" class="h-64 border border-border bg-bg sm:h-96" role="application" aria-label="Map to pin incident location"></div>
                     <p class="text-xs text-muted" x-show="lat && lng">
                         Selected coordinates:
                         <span class="mono" x-text="lat + ', ' + lng"></span>
                     </p>
+                    <p class="text-xs text-danger" x-show="geoError" x-text="geoError"></p>
                 </div>
                 <input type="hidden" name="latitude" :value="lat" required>
                 <input type="hidden" name="longitude" :value="lng" required>
@@ -86,6 +92,8 @@
                 lng: '',
                 map: null,
                 marker: null,
+                locating: false,
+                geoError: '',
                 init() {
                     const el = document.getElementById('report-map');
                     if (!el) return;
@@ -114,6 +122,29 @@
                         this.marker = L.marker(latlng, { draggable: true }).addTo(this.map);
                         this.marker.on('dragend', (event) => this.setPoint(event.target.getLatLng()));
                     }
+                },
+                useMyLocation() {
+                    if (!navigator.geolocation) {
+                        this.geoError = 'Geolocation is not supported by this browser.';
+                        return;
+                    }
+
+                    this.locating = true;
+                    this.geoError = '';
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const latlng = { lat: position.coords.latitude, lng: position.coords.longitude };
+                            this.map.setView(latlng, 16);
+                            this.setPoint(latlng);
+                            this.locating = false;
+                        },
+                        () => {
+                            this.geoError = 'Unable to determine your location. Please pin the map manually.';
+                            this.locating = false;
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+                    );
                 },
             }));
         });

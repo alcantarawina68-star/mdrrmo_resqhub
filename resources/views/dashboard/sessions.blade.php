@@ -9,7 +9,59 @@
                 There are no active sessions right now.
             </div>
         @else
-            <div class="overflow-x-auto border border-border bg-surface">
+            @php
+                $perUser = $sessions->groupBy('user_id');
+                $currentUserId = (int) auth()->id();
+            @endphp
+
+            <div class="space-y-4 md:hidden">
+                @foreach ($perUser as $userId => $userSessions)
+                    @php($first = $userSessions->first())
+                    <div class="border border-border bg-surface p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-medium text-fg">{{ $first->name }}</p>
+                                <p class="mono truncate text-xs text-muted">{{ $first->email }}</p>
+                            </div>
+                            <div class="flex shrink-0 flex-col items-end gap-1">
+                                <span class="chip chip-{{ $first->role }}">{{ \App\Enums\UserRole::from($first->role)->label() }}</span>
+                                <span class="mono text-xs text-muted">{{ $userSessions->count() }} device{{ $userSessions->count() !== 1 ? 's' : '' }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 divide-y divide-border border-t border-border">
+                            @foreach ($userSessions as $session)
+                                <div class="flex items-center justify-between gap-3 py-2.5 text-xs">
+                                    <div class="min-w-0">
+                                        <p class="mono truncate text-muted">{{ $session->session_id }}</p>
+                                        @if ($session->session_id === request()->session()->getId())
+                                            <span class="chip chip-active mt-1">This device</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex shrink-0 items-center gap-2">
+                                        <span class="mono text-muted">{{ \Illuminate\Support\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}</span>
+                                        @if ($session->session_id !== request()->session()->getId())
+                                            <button type="button" class="btn btn-tertiary px-0 text-danger"
+                                                @click="confirmTerminate('{{ $first->name }}', '{{ $session->session_id }}')"
+                                                aria-haspopup="dialog">
+                                                End
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @if ((int) $first->user_id !== $currentUserId)
+                            <button type="button" class="btn btn-tertiary mt-3 px-0 text-danger"
+                                @click="confirmLogoutUser('{{ $first->name }}', '{{ $userId }}')"
+                                aria-haspopup="dialog">
+                                Log out all devices
+                            </button>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="hidden overflow-x-auto border border-border bg-surface md:block">
                 <table class="w-full min-w-[720px] text-left text-sm">
                     <thead>
                         <tr>
@@ -20,10 +72,6 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
-                        @php
-                            $perUser = $sessions->groupBy('user_id');
-                            $currentUserId = (int) auth()->id();
-                        @endphp
                         @foreach ($perUser as $userId => $userSessions)
                             @php
                                 $first = $userSessions->first();

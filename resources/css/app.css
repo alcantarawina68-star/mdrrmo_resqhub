@@ -225,6 +225,14 @@
     .skeleton-circle {
         @apply animate-pulse rounded-full bg-border/70;
     }
+
+    @media (hover: none) and (pointer: coarse) {
+        .input,
+        .select,
+        .textarea {
+            font-size: 16px;
+        }
+    }
 }
 
 .leaflet-container {

@@ -2,6 +2,12 @@
     <h1 class="text-xl font-semibold text-fg">Log in</h1>
     <p class="mt-1 text-sm text-muted">Access your reports or the operations dashboard.</p>
 
+    @if (session('status'))
+        <div class="mt-4 border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary" role="status">
+            {{ session('status') }}
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="mt-4 border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
             <ul class="list-inside list-disc space-y-1">
@@ -41,6 +47,10 @@
     </form>
 
     <p class="mt-6 border-t border-border pt-4 text-sm text-muted">
+        <a href="{{ route('password.request') }}" class="font-medium text-primary">Forgot your password?</a>
+    </p>
+
+    <p class="mt-2 text-sm text-muted">
         No account yet? <a href="{{ route('register') }}" class="font-medium text-primary">Register as a community user</a>.
     </p>
 </x-layouts.guest>
