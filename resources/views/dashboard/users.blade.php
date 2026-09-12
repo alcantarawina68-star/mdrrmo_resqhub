@@ -73,6 +73,7 @@
                             <div class="flex items-center gap-2 sm:col-span-2">
                                 <button type="submit" class="btn btn-secondary">Save</button>
                                 @if (! $user->is(auth()->user()) && ! ($user->isSuperadmin() && ! $canManageSuperadmins))
+                                    <button type="submit" form="reset-{{ $user->id }}" class="btn btn-tertiary">Reset password</button>
                                     <button type="button" class="btn btn-tertiary text-danger"
                                         @click="confirmDelete('{{ $user->name }}', '{{ $user->id }}')"
                                         aria-haspopup="dialog">
@@ -83,6 +84,9 @@
                         </form>
 
                         @if (! $user->is(auth()->user()) && ! ($user->isSuperadmin() && ! $canManageSuperadmins))
+                            <form id="reset-{{ $user->id }}" method="POST" action="{{ route('dashboard.users.reset-password', $user) }}" class="hidden">
+                                @csrf
+                            </form>
                             <form id="delete-{{ $user->id }}" method="POST" action="{{ route('dashboard.users.destroy', $user) }}" class="hidden">
                                 @csrf
                                 @method('DELETE')

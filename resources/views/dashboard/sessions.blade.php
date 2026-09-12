@@ -10,26 +10,38 @@
             </div>
         @else
             @php
-                $perUser = $sessions->groupBy('user_id');
+                $perUser = $sessions
+                    ->groupBy('user_id')
+                    ->map(function ($rows) {
+                        $first = $rows->first();
+
+                        return [
+                            'user_id' => $first->user_id,
+                            'name' => $first->name,
+                            'email' => $first->email,
+                            'role' => $first->role,
+                            'count' => $rows->count(),
+                            'rows' => $rows,
+                        ];
+                    });
                 $currentUserId = (int) auth()->id();
             @endphp
 
             <div class="space-y-4 md:hidden">
-                @foreach ($perUser as $userId => $userSessions)
-                    @php($first = $userSessions->first())
+                @foreach ($perUser as $userId => $user)
                     <div class="border border-border bg-surface p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <p class="font-medium text-fg">{{ $first->name }}</p>
-                                <p class="mono truncate text-xs text-muted">{{ $first->email }}</p>
+                                <p class="font-medium text-fg">{{ $user['name'] }}</p>
+                                <p class="mono truncate text-xs text-muted">{{ $user['email'] }}</p>
                             </div>
                             <div class="flex shrink-0 flex-col items-end gap-1">
-                                <span class="chip chip-{{ $first->role }}">{{ \App\Enums\UserRole::from($first->role)->label() }}</span>
-                                <span class="mono text-xs text-muted">{{ $userSessions->count() }} device{{ $userSessions->count() !== 1 ? 's' : '' }}</span>
+                                <span class="chip chip-{{ $user['role'] }}">{{ \App\Enums\UserRole::from($user['role'])->label() }}</span>
+                                <span class="mono text-xs text-muted">{{ $user['count'] }} device{{ $user['count'] !== 1 ? 's' : '' }}</span>
                             </div>
                         </div>
                         <div class="mt-3 divide-y divide-border border-t border-border">
-                            @foreach ($userSessions as $session)
+                            @foreach ($user['rows'] as $session)
                                 <div class="flex items-center justify-between gap-3 py-2.5 text-xs">
                                     <div class="min-w-0">
                                         <p class="mono truncate text-muted">{{ $session->session_id }}</p>
@@ -41,7 +53,7 @@
                                         <span class="mono text-muted">{{ \Illuminate\Support\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}</span>
                                         @if ($session->session_id !== request()->session()->getId())
                                             <button type="button" class="btn btn-tertiary px-0 text-danger"
-                                                @click="confirmTerminate('{{ $first->name }}', '{{ $session->session_id }}')"
+                                                @click="confirmTerminate('{{ $user['name'] }}', '{{ $session->session_id }}')"
                                                 aria-haspopup="dialog">
                                                 End
                                             </button>
@@ -50,9 +62,9 @@
                                 </div>
                             @endforeach
                         </div>
-                        @if ((int) $first->user_id !== $currentUserId)
+                        @if ((int) $user['user_id'] !== $currentUserId)
                             <button type="button" class="btn btn-tertiary mt-3 px-0 text-danger"
-                                @click="confirmLogoutUser('{{ $first->name }}', '{{ $userId }}')"
+                                @click="confirmLogoutUser('{{ $user['name'] }}', '{{ $userId }}')"
                                 aria-haspopup="dialog">
                                 Log out all devices
                             </button>
@@ -72,27 +84,24 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
-                        @foreach ($perUser as $userId => $userSessions)
-                            @php
-                                $first = $userSessions->first();
-                            @endphp
+                        @foreach ($perUser as $userId => $user)
                             <tr>
                                 <td class="px-4 py-3">
-                                    <p class="font-medium text-fg">{{ $first->name }}</p>
-                                    <p class="mono text-xs text-muted">{{ $first->email }}</p>
+                                    <p class="font-medium text-fg">{{ $user['name'] }}</p>
+                                    <p class="mono text-xs text-muted">{{ $user['email'] }}</p>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span class="chip chip-{{ $first->role }}">{{ \App\Enums\UserRole::from($first->role)->label() }}</span>
-                                    <span class="ml-2 text-xs text-muted">{{ $userSessions->count() }} device{{ $userSessions->count() !== 1 ? 's' : '' }}</span>
+                                    <span class="chip chip-{{ $user['role'] }}">{{ \App\Enums\UserRole::from($user['role'])->label() }}</span>
+                                    <span class="ml-2 text-xs text-muted">{{ $user['count'] }} device{{ $user['count'] !== 1 ? 's' : '' }}</span>
                                 </td>
                                 <td class="px-4 py-3"></td>
                                 <td class="px-4 py-3 text-right">
-                                    @if ((int) $first->user_id !== $currentUserId)
+                                    @if ((int) $user['user_id'] !== $currentUserId)
                                         <form id="logout-user-{{ $userId }}" method="POST" action="{{ route('dashboard.sessions.logout-user', $userId) }}" class="hidden">
                                             @csrf
                                         </form>
                                         <button type="button" class="btn btn-tertiary text-danger"
-                                            @click="confirmLogoutUser('{{ $first->name }}', '{{ $userId }}')"
+                                            @click="confirmLogoutUser('{{ $user['name'] }}', '{{ $userId }}')"
                                             aria-haspopup="dialog">
                                             Log out all devices
                                         </button>
@@ -100,7 +109,7 @@
                                 </td>
                             </tr>
 
-                            @foreach ($userSessions as $session)
+                            @foreach ($user['rows'] as $session)
                                 <tr class="bg-bg/40">
                                     <td class="px-4 py-2 text-xs text-muted" colspan="2">
                                         <span class="mono">{{ $session->session_id }}</span>
@@ -117,7 +126,7 @@
                                                 @csrf
                                             </form>
                                             <button type="button" class="btn btn-tertiary text-danger"
-                                                @click="confirmTerminate('{{ $first->name }}', '{{ $session->session_id }}')"
+                                                @click="confirmTerminate('{{ $user['name'] }}', '{{ $session->session_id }}')"
                                                 aria-haspopup="dialog">
                                                 End session
                                             </button>

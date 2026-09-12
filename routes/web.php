@@ -54,6 +54,7 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');
             Route::post('/users', [UserController::class, 'store'])->middleware('reauthenticate')->name('dashboard.users.store');
             Route::post('/users/{user}', [UserController::class, 'update'])->middleware('reauthenticate')->name('dashboard.users.update');
+            Route::post('/users/{user}/reset-password', [UserController::class, 'sendResetLink'])->middleware('reauthenticate')->name('dashboard.users.reset-password');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.users.destroy');
         });
 

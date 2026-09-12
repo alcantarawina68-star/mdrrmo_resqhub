@@ -9,3 +9,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/css/** | .ai/rules/css.md |
 | resources/views/components/layouts/dashboard.blade.php | .ai/rules/layouts.md |
 | app/Http/Middleware/RequireReauthentication.php | .ai/rules/middleware.md |
+| resources/views/** | .ai/rules/views.md |

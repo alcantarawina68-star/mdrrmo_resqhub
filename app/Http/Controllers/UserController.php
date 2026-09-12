@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -107,6 +108,23 @@ class UserController extends Controller
         $user->update($data);
 
         return back()->with('status', 'User account updated.');
+    }
+
+    public function sendResetLink(Request $request, User $user): RedirectResponse
+    {
+        if (! $request->user()->isSuperadmin() && $user->isSuperadmin()) {
+            throw ValidationException::withMessages([
+                'user' => 'Only a Super Admin can manage Super Admin accounts.',
+            ]);
+        }
+
+        $status = PasswordBroker::sendResetLink(['email' => $user->email]);
+
+        $message = $status === PasswordBroker::RESET_LINK_SENT
+            ? "Password reset link sent to {$user->email}."
+            : __('passwords.throttled');
+
+        return back()->with('status', $message);
     }
 
     public function destroy(Request $request, User $user): RedirectResponse

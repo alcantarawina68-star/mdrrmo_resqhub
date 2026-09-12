@@ -218,3 +218,18 @@ test('the sessions page renders for the current superadmin device', function () 
 
     expect($response->status())->toBe(200);
 });
+
+test('the sessions page renders device rows for every user', function () {
+    $superadmin = User::factory()->superadmin()->create();
+    $target = User::factory()->communityUser()->create(['name' => 'Maria Dela Cruz']);
+
+    superadminFakeSession('device-target', $target->id);
+    $target->forceFill(['session_id' => 'device-target'])->save();
+
+    actingAs($superadmin)
+        ->get('/dashboard/sessions')
+        ->assertOk()
+        ->assertSee('Maria Dela Cruz')
+        ->assertSee('device-target')
+        ->assertSee('Log out all devices');
+});
