@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum UserRole: string
 {
+    case Superadmin = 'superadmin';
     case Admin = 'admin';
     case Encoder = 'encoder';
     case BarangayOfficial = 'barangay_official';
@@ -13,12 +14,18 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
+            self::Superadmin => 'Super Admin',
             self::Admin => 'Administrator',
             self::Encoder => 'Encoder / Dispatcher',
             self::BarangayOfficial => 'Barangay Official',
             self::Responder => 'Responder',
             self::CommunityUser => 'Community User',
         };
+    }
+
+    public function isSuperadmin(): bool
+    {
+        return $this === self::Superadmin;
     }
 
     /**
@@ -28,7 +35,7 @@ enum UserRole: string
      */
     public static function operationsRoles(): array
     {
-        return [self::Admin->value, self::Encoder->value];
+        return [self::Admin->value, self::Encoder->value, self::Superadmin->value];
     }
 
     /**

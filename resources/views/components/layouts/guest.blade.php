@@ -7,6 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub</title>
+    <meta name="description" content="ResQHub — live incident map and advisories from the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="theme-color" content="#1b4d3e">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>

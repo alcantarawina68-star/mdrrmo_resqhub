@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->status === UserStatus::Active;
     }
 
+    public function isSuperadmin(): bool
+    {
+        return in_array($this->role?->value, [UserRole::Superadmin->value], true);
+    }
+
     public function hasActiveSession(): bool
     {
         return $this->session_id !== null

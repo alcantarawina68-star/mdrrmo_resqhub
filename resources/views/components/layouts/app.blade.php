@@ -7,6 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub</title>
+    <meta name="description" content="ResQHub — live incident map and advisories from the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="theme-color" content="#1b4d3e">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
@@ -26,7 +29,7 @@
                 <a href="{{ route('advisories') }}" class="nav-link {{ request()->routeIs('advisories') ? 'nav-link-active' : '' }}">Advisories</a>
 
                 @auth
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard*') ? 'nav-link-active' : '' }}">Operations</a>
                     @endif
                 @endauth
@@ -67,8 +70,8 @@
                     </svg>
                 </button>
 
-                <button type="button" class="flex h-11 w-11 items-center justify-center border border-border bg-surface" aria-label="Open menu"
-                    x-data @click="$store.mobileMenu.open = !$store.mobileMenu.open">
+                <button type="button" class="flex h-11 w-11 items-center justify-center border border-border bg-surface" aria-label="Open menu" aria-expanded="false"
+                    x-data :aria-expanded="$store.mobileMenu.open" @click="$store.mobileMenu.open = !$store.mobileMenu.open">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
@@ -76,14 +79,14 @@
             </div>
         </div>
 
-        <div x-data x-show="$store.mobileMenu.open" x-cloak class="border-t border-border bg-surface md:hidden">
-            <div class="flex flex-col gap-1 px-4 py-3">
+        <div x-data x-show="$store.mobileMenu.open" x-cloak @keydown.escape.window="$store.mobileMenu.open = false" class="border-t border-border bg-surface md:hidden">
+            <div class="flex flex-col gap-1 px-4 py-3" @click="$store.mobileMenu.open = false">
                 <a href="{{ route('home') }}" class="nav-link">Live Map</a>
                 <a href="{{ route('advisories') }}" class="nav-link">Advisories</a>
                 @auth
                     <a href="{{ route('report.create') }}" class="nav-link">Submit Report</a>
                     <a href="{{ route('my-reports') }}" class="nav-link">My Reports</a>
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
                         <a href="{{ route('dashboard') }}" class="nav-link">Operations</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="mt-1">

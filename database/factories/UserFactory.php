@@ -54,6 +54,11 @@ class UserFactory extends Factory
         return $this->role(UserRole::Admin);
     }
 
+    public function superadmin(): static
+    {
+        return $this->role(UserRole::Superadmin);
+    }
+
     public function encoder(): static
     {
         return $this->role(UserRole::Encoder);

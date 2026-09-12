@@ -1,6 +1,6 @@
 <x-layouts.dashboard title="Incidents">
     <div class="mb-5">
-        <form method="GET" action="{{ route('dashboard.incidents') }}" class="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <form method="GET" action="{{ route('dashboard.incidents') }}" class="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <div class="field">
                 <label class="label" for="status">Status</label>
                 <select id="status" name="status" class="select">
@@ -28,11 +28,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="field md:col-span-2 lg:col-span-1">
+            <div class="field col-span-2 lg:col-span-1">
                 <label class="label" for="search">Search</label>
                 <input id="search" type="search" name="search" class="input" value="{{ request('search') }}" placeholder="ID, description, barangay">
             </div>
-            <div class="flex items-end gap-2 md:col-span-2 lg:col-span-1">
+            <div class="col-span-2 flex items-end gap-2 lg:col-span-1">
                 <button type="submit" class="btn btn-secondary">Filter</button>
                 @if (request()->hasAny('status', 'type', 'priority', 'search'))
                     <a href="{{ route('dashboard.incidents') }}" class="btn btn-tertiary">Clear</a>

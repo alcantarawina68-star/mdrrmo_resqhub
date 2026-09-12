@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Enums\Priority;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Models\Incident;
+use App\Models\User;
 use App\Services\IncidentService;
 use App\Services\ReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -19,8 +24,14 @@ class DashboardController extends Controller
         private readonly ReportService $reports,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        if ($request->user()->isSuperadmin()) {
+            return view('dashboard.index', [
+                'analytics' => $this->superadminAnalytics(),
+            ]);
+        }
+
         $summary = $this->reports->summary();
 
         $latest = Incident::query()
@@ -32,6 +43,83 @@ class DashboardController extends Controller
         $today = Incident::whereDate('reported_at', today())->count();
 
         return view('dashboard.index', compact('summary', 'latest', 'today'));
+    }
+
+    /**
+     * Build the user and session analytics shown on the superadmin overview.
+     *
+     * @return array<string, mixed>
+     */
+    private function superadminAnalytics(): array
+    {
+        $statusCounts = User::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $roleCounts = User::query()
+            ->selectRaw('role, COUNT(*) as total')
+            ->groupBy('role')
+            ->pluck('total', 'role');
+
+        $activeCutoff = Carbon::now()->subMinutes((int) config('session.lifetime'));
+
+        $onlineForUsers = DB::table('sessions')
+            ->select(
+                'sessions.user_id',
+                'sessions.id as session_id',
+                'sessions.ip_address',
+                'sessions.last_activity',
+                'users.name',
+                'users.email',
+                'users.role',
+            )
+            ->join('users', 'users.id', '=', 'sessions.user_id')
+            ->where('sessions.last_activity', '>=', $activeCutoff->timestamp)
+            ->orderByDesc('sessions.last_activity');
+
+        $onlineByRole = DB::table('sessions')
+            ->join('users', 'users.id', '=', 'sessions.user_id')
+            ->where('sessions.last_activity', '>=', $activeCutoff->timestamp)
+            ->selectRaw('users.role, COUNT(*) as total')
+            ->groupBy('users.role')
+            ->pluck('total', 'role');
+
+        $onlineUsers = $onlineForUsers->get()->groupBy('user_id')->map->first()->values();
+
+        $sessionBase = DB::table('sessions');
+
+        return [
+            'users' => [
+                'total' => (int) User::count(),
+                'active' => (int) ($statusCounts->get(UserStatus::Active->value) ?? 0),
+                'suspended' => (int) ($statusCounts->get(UserStatus::Suspended->value) ?? 0),
+                'inactive' => (int) ($statusCounts->get(UserStatus::Inactive->value) ?? 0),
+                'new_30_days' => (int) User::where('created_at', '>=', now()->subDays(30))->count(),
+                'by_role' => collect(UserRole::cases())
+                    ->map(fn (UserRole $role) => [
+                        'label' => $role->label(),
+                        'value' => $role->value,
+                        'total' => (int) ($roleCounts->get($role->value) ?? 0),
+                    ])
+                    ->values()
+                    ->all(),
+            ],
+            'sessions' => [
+                'online_now' => (int) $onlineForUsers->count(),
+                'sessions_24h' => (int) (clone $sessionBase)->where('last_activity', '>=', now()->subDay()->timestamp)->count(),
+                'sessions_7d' => (int) (clone $sessionBase)->where('last_activity', '>=', now()->subDays(7)->timestamp)->count(),
+                'online_by_role' => collect(UserRole::cases())
+                    ->map(fn (UserRole $role) => [
+                        'label' => $role->label(),
+                        'value' => $role->value,
+                        'total' => (int) ($onlineByRole->get($role->value) ?? 0),
+                    ])
+                    ->values()
+                    ->all(),
+            ],
+            'online_users' => $onlineUsers,
+        ];
     }
 
     public function incidents(Request $request): View

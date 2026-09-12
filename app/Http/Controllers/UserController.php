@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -45,11 +46,18 @@ class UserController extends Controller
             'roles' => UserRole::labels(),
             'statuses' => UserStatus::labels(),
             'activeSessionIds' => $activeSessionIds,
+            'canManageSuperadmins' => $request->user()->isSuperadmin(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (! $request->user()->isSuperadmin() && $request->input('role') === UserRole::Superadmin->value) {
+            throw ValidationException::withMessages([
+                'role' => 'Only a Super Admin can create a Super Admin account.',
+            ]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
@@ -73,6 +81,12 @@ class UserController extends Controller
             ]);
         }
 
+        if (! $request->user()->isSuperadmin() && ($user->isSuperadmin() || $request->input('role') === UserRole::Superadmin->value)) {
+            throw ValidationException::withMessages([
+                'role' => 'Only a Super Admin can manage Super Admin accounts.',
+            ]);
+        }
+
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
             'email' => ['sometimes', 'email', 'max:190', 'unique:users,email,'.$user->id],
@@ -82,6 +96,8 @@ class UserController extends Controller
             'barangay' => ['sometimes', 'nullable', 'string', 'max:100'],
             'status' => ['sometimes', Rule::in(UserStatus::values())],
         ]);
+
+        $this->guardLastSuperadmin($user, $data);
 
         if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
@@ -94,11 +110,40 @@ class UserController extends Controller
         return back()->with('status', 'User account updated.');
     }
 
+    public function sendResetLink(Request $request, User $user): RedirectResponse
+    {
+        if (! $request->user()->isSuperadmin() && $user->isSuperadmin()) {
+            throw ValidationException::withMessages([
+                'user' => 'Only a Super Admin can manage Super Admin accounts.',
+            ]);
+        }
+
+        $status = PasswordBroker::sendResetLink(['email' => $user->email]);
+
+        $message = $status === PasswordBroker::RESET_LINK_SENT
+            ? "Password reset link sent to {$user->email}."
+            : __('passwords.throttled');
+
+        return back()->with('status', $message);
+    }
+
     public function destroy(Request $request, User $user): RedirectResponse
     {
         if ($user->is($request->user())) {
             throw ValidationException::withMessages([
                 'user' => 'You cannot delete your own account.',
+            ]);
+        }
+
+        if (! $request->user()->isSuperadmin() && $user->isSuperadmin()) {
+            throw ValidationException::withMessages([
+                'user' => 'Only a Super Admin can delete a Super Admin account.',
+            ]);
+        }
+
+        if ($user->hasRole(UserRole::Superadmin) && $this->isLastActiveSuperadmin($user)) {
+            throw ValidationException::withMessages([
+                'user' => 'The last active Super Admin cannot be deleted.',
             ]);
         }
 
@@ -114,5 +159,28 @@ class UserController extends Controller
         $user->delete();
 
         return back()->with('status', 'User account deleted.');
+    }
+
+    private function guardLastSuperadmin(User $user, array $data): void
+    {
+        if (! $user->isSuperadmin() || ! $this->isLastActiveSuperadmin($user)) {
+            return;
+        }
+
+        $roleBeingChanged = array_key_exists('role', $data) && $data['role'] !== UserRole::Superadmin->value;
+        $statusBeingChanged = array_key_exists('status', $data) && $data['status'] !== UserStatus::Active->value;
+
+        if ($roleBeingChanged || $statusBeingChanged) {
+            throw ValidationException::withMessages([
+                'user' => 'The last active Super Admin cannot be demoted or deactivated.',
+            ]);
+        }
+    }
+
+    private function isLastActiveSuperadmin(User $user): bool
+    {
+        return User::where('role', UserRole::Superadmin->value)
+            ->where('status', UserStatus::Active->value)
+            ->count() <= 1;
     }
 }
