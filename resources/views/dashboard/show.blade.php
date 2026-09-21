@@ -38,6 +38,45 @@
                 </div>
             </div>
 
+            @if ($incident->evidence->isNotEmpty())
+                <div class="border border-border bg-surface">
+                    <div class="flex items-center justify-between border-b border-border px-5 py-4">
+                        <p class="panel-title">Attached evidence</p>
+                        <span class="mono text-xs text-muted">{{ $incident->evidence->count() }} item{{ $incident->evidence->count() === 1 ? '' : 's' }}</span>
+                    </div>
+                    <ul class="divide-y divide-border">
+                        @foreach ($incident->evidence as $item)
+                            <li class="px-5 py-4">
+                                <div class="flex items-start gap-4">
+                                    <img src="{{ asset('storage/'.$item->file_path) }}" alt="{{ $item->original_name }}" class="h-24 w-24 shrink-0 rounded border border-border bg-bg object-cover">
+                                    <div class="min-w-0 flex-1">
+                                        <a href="{{ asset('storage/'.$item->file_path) }}" download="{{ $item->original_name }}" class="block truncate text-sm font-medium no-underline hover:underline" aria-label="Download {{ $item->original_name }}">
+                                            {{ $item->original_name }}
+                                        </a>
+                                        <p class="mono mt-0.5 text-xs text-muted">{{ number_format($item->file_size / 1024, 1) }} KB &middot; {{ $item->file_type }}</p>
+                                        <div class="mt-2 text-xs">
+                                            @if ($item->ai_error)
+                                                <span class="text-muted">AI check failed</span>
+                                            @elseif ($item->ai_analyzed_at)
+                                                <span class="inline-flex items-center gap-2">
+                                                    <span class="{{ $item->ai_is_generated ? 'text-danger' : 'text-success' }} font-medium">
+                                                        {{ $item->ai_is_generated ? 'AI-generated image' : 'Likely real photo' }}
+                                                    </span>
+                                                    <span class="mono text-muted">{{ number_format(($item->ai_score ?? 0) * 100, 1) }}% confidence</span>
+                                                    <span class="text-muted">Analyzed {{ $item->ai_analyzed_at->format('M j, g:i A') }}</span>
+                                                </span>
+                                            @else
+                                                <span class="text-muted">AI check pending</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
                 <div class="border border-border bg-surface p-5">
                     <p class="panel-title mb-3">Edit details</p>

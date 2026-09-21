@@ -27,6 +27,7 @@ class StoreIncidentRequest extends FormRequest
             'priority' => ['required', 'string', 'in:'.implode(',', Priority::values())],
             'contact_number' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'is_anonymous' => ['nullable', 'boolean'],
+            'evidence' => ['nullable', 'file', 'image', 'mimes:jpeg,png', 'max:5120'],
         ];
     }
 }

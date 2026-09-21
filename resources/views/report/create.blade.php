@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
         </div>
 
-        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5">
+        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data">
             @csrf
 
             <div class="lg:col-span-3">
@@ -66,6 +66,13 @@
                         <div class="field">
                             <label class="label" for="description">Description</label>
                             <textarea id="description" name="description" rows="6" class="textarea" minlength="20" required placeholder="Describe the incident, what you saw, and anyone who needs help.">{{ old('description') }}</textarea>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="evidence">Image evidence <span class="normal-case">(optional)</span></label>
+                            <input id="evidence" type="file" name="evidence" accept="image/jpeg,image/png" class="input">
+                            <p class="mt-1 text-xs text-muted">A photo will be checked automatically to confirm it is not AI-generated. JPG or PNG, up to 5 MB.</p>
+                            @error('evidence') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="field">

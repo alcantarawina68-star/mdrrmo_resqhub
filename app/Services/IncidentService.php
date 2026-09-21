@@ -6,10 +6,13 @@ use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Priority;
 use App\Enums\UserRole;
+use App\Jobs\AnalyzeImageAi;
 use App\Jobs\SendSms;
+use App\Models\Evidence;
 use App\Models\Incident;
 use App\Models\StatusLog;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -17,7 +20,10 @@ class IncidentService
 {
     public function createOnline(User $reporter, array $data): Incident
     {
-        $incident = DB::transaction(function () use ($reporter, $data) {
+        $attachment = $data['evidence'] ?? null;
+        unset($data['evidence']);
+
+        $incident = DB::transaction(function () use ($reporter, $data, $attachment) {
             $incident = $reporter->incidents()->create([
                 ...$data,
                 'source' => IncidentSource::Online,
@@ -25,6 +31,7 @@ class IncidentService
                 'reported_at' => now(),
             ]);
 
+            $this->attachEvidence($incident, $attachment);
             $this->logStatus($incident, $reporter, IncidentStatus::UnderVerification, 'Incident submitted online.');
 
             return $incident;
@@ -159,6 +166,26 @@ class IncidentService
         $this->notifyAssignedResponders($incident);
 
         return $incident;
+    }
+
+    private function attachEvidence(Incident $incident, ?UploadedFile $file): void
+    {
+        if ($file === null) {
+            return;
+        }
+
+        $path = $file->store('evidence', 'public');
+
+        $evidence = Evidence::create([
+            'incident_id' => $incident->id,
+            'file_path' => $path,
+            'file_type' => $file->getMimeType() ?: $file->guessExtension(),
+            'original_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'uploaded_at' => now(),
+        ]);
+
+        AnalyzeImageAi::dispatch($evidence);
     }
 
     private function logStatus(Incident $incident, User $actor, IncidentStatus $newStatus, ?string $note = null): void

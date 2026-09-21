@@ -16,12 +16,20 @@ class Evidence extends Model
         'original_name',
         'file_size',
         'uploaded_at',
+        'ai_label',
+        'ai_is_generated',
+        'ai_score',
+        'ai_analyzed_at',
+        'ai_error',
     ];
 
     protected function casts(): array
     {
         return [
             'uploaded_at' => 'datetime',
+            'ai_is_generated' => 'boolean',
+            'ai_score' => 'float',
+            'ai_analyzed_at' => 'datetime',
         ];
     }
 

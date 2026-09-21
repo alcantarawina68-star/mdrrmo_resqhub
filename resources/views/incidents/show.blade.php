@@ -53,15 +53,39 @@
                         <ul class="divide-y divide-border border border-border bg-surface">
                             @foreach ($incident->evidence as $item)
                                 <li class="text-sm">
-                                    <a href="{{ asset('storage/'.$item->file_path) }}" download="{{ $item->original_name }}"
-                                        class="flex items-center justify-between gap-4 px-4 py-3 no-underline transition-colors duration-150 hover:bg-bg"
-                                        aria-label="Download {{ $item->original_name }}">
-                                        <span class="truncate">{{ $item->original_name }}</span>
-                                        <span class="flex shrink-0 items-center gap-2">
-                                            <span class="mono text-xs text-muted">{{ number_format($item->file_size / 1024, 1) }} KB</span>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        </span>
-                                    </a>
+                                    <div class="flex items-start gap-4 px-4 py-3">
+                                        <img src="{{ asset('storage/'.$item->file_path) }}" alt="{{ $item->original_name }}" class="h-16 w-16 shrink-0 rounded border border-border bg-bg object-cover">
+                                        <div class="min-w-0 flex-1">
+                                            <a href="{{ asset('storage/'.$item->file_path) }}" download="{{ $item->original_name }}"
+                                                class="flex items-center justify-between gap-4 no-underline transition-colors duration-150 hover:text-fg"
+                                                aria-label="Download {{ $item->original_name }}">
+                                                <span class="truncate">{{ $item->original_name }}</span>
+                                                <span class="flex shrink-0 items-center gap-2">
+                                                    <span class="mono text-xs text-muted">{{ number_format($item->file_size / 1024, 1) }} KB</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                </span>
+                                            </a>
+                                            @if ($item->ai_analyzed_at)
+                                                <div class="flex items-center justify-between gap-4 py-2 text-xs">
+                                                    @if ($item->ai_error)
+                                                        <span class="text-muted">AI check failed</span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-2">
+                                                            <span class="{{ $item->ai_is_generated ? 'text-danger' : 'text-success' }}">
+                                                                {{ $item->ai_is_generated ? 'AI-generated image' : 'Likely real photo' }}
+                                                            </span>
+                                                            <span class="mono text-muted">{{ number_format(($item->ai_score ?? 0) * 100, 1) }}% confidence</span>
+                                                        </span>
+                                                    @endif
+                                                    <span class="text-muted">Analyzed {{ $item->ai_analyzed_at->format('M j, g:i A') }}</span>
+                                                </div>
+                                            @else
+                                                <div class="flex items-center justify-between gap-4 py-2 text-xs">
+                                                    <span class="text-muted">AI check pending</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </li>
                             @endforeach
                         </ul>
