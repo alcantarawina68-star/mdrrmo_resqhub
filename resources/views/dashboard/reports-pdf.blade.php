@@ -22,7 +22,7 @@
 <body>
     <div class="header">
         <h1>Incident Report</h1>
-        <div class="muted">ResQHub · MDRRMO Camalaniugan, Cagayan</div>
+        <div class="muted">ResQHub · {{ site_setting('agency_short_name') }} · {{ site_setting('municipality') }}</div>
     </div>
 
     <p class="meta">

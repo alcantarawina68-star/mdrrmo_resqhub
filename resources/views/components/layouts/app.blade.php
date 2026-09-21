@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub</title>
-    <meta name="description" content="ResQHub — live incident map and advisories from the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="description" content="ResQHub — live incident map and advisories from {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -20,7 +20,7 @@
                 <span class="flex h-9 w-9 items-center justify-center bg-primary text-sm font-bold tracking-tight text-white">RQ</span>
                 <span class="leading-tight">
                     <span class="block text-base font-semibold text-fg">ResQHub</span>
-                    <span class="block text-xs text-muted">MDRRMO Camalaniugan</span>
+                    <span class="block text-xs text-muted">{{ site_setting('agency_short_name') }}</span>
                 </span>
             </a>
 
@@ -171,8 +171,12 @@
 
     <footer class="mt-16 border-t border-border bg-surface py-6 pb-24 lg:pb-6">
         <div class="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 text-xs text-muted sm:px-6 md:flex-row md:items-center md:justify-between">
-            <p>ResQHub · Municipal Disaster Risk Reduction and Management Office · Camalaniugan, Cagayan</p>
-            <p class="mono">Emergency hotline: 0917 123 4567 · resqhub.ph</p>
+            <p>ResQHub · {{ site_setting('agency_name') }} · {{ site_setting('municipality') }}</p>
+            <p class="mono">Emergency hotline: {{ site_setting('hotline') }} · {{ site_setting('website') }}
+                @if (site_setting('contact_email'))
+                    · {{ site_setting('contact_email') }}
+                @endif
+            </p>
         </div>
     </footer>
 

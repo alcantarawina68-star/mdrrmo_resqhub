@@ -316,7 +316,7 @@ class IncidentService
             return;
         }
 
-        $message = "ResQHub: Your report was received ({$incident->incident_number}). Track it at resqhub.ph/my-reports.";
+        $message = "ResQHub: Your report was received ({$incident->incident_number}). Track it at ".site_setting('website', 'resqhub.ph').'/my-reports.';
 
         SendSms::dispatch($phone, $message);
     }

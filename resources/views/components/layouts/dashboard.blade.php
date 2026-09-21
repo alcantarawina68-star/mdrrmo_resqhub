@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub Operations</title>
-    <meta name="description" content="ResQHub operations dashboard for the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="description" content="ResQHub operations dashboard for {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -42,6 +42,7 @@
 
                 @if ($isAdmin)
                     <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                    <a href="{{ route('dashboard.settings') }}" class="nav-link {{ request()->routeIs('dashboard.settings') ? 'nav-link-active' : '' }}">Site Info</a>
                 @endif
 
                 @if ($isSuperadmin)
@@ -98,6 +99,7 @@
                     @endif
                     @if ($isAdmin)
                         <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                        <a href="{{ route('dashboard.settings') }}" class="nav-link {{ request()->routeIs('dashboard.settings') ? 'nav-link-active' : '' }}">Site Info</a>
                     @endif
 
                     @if ($isSuperadmin)
