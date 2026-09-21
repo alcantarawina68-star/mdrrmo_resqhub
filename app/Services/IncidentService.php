@@ -23,42 +23,76 @@ class IncidentService
         $attachment = $data['evidence'] ?? null;
         unset($data['evidence']);
 
-        $incident = DB::transaction(function () use ($reporter, $data, $attachment) {
+        $assignedUnit = $data['assigned_unit'] ?? null;
+        unset($data['assigned_unit']);
+
+        $autoVerified = $this->isOperationsRole($reporter);
+        $status = $autoVerified ? IncidentStatus::Verified : IncidentStatus::UnderVerification;
+
+        $incident = DB::transaction(function () use ($reporter, $data, $attachment, $status, $autoVerified, $assignedUnit) {
             $incident = $reporter->incidents()->create([
                 ...$data,
                 'source' => IncidentSource::Online,
-                'status' => IncidentStatus::UnderVerification,
+                'status' => $status,
+                'verified_at' => $autoVerified ? now() : null,
+                'assigned_unit' => $autoVerified ? $assignedUnit : null,
                 'reported_at' => now(),
             ]);
 
             $this->attachEvidence($incident, $attachment);
-            $this->logStatus($incident, $reporter, IncidentStatus::UnderVerification, 'Incident submitted online.');
+            $this->logStatus(
+                $incident,
+                $reporter,
+                $status,
+                $autoVerified ? 'Incident submitted online and verified.' : 'Incident submitted online.',
+            );
 
             return $incident;
         });
 
-        $this->notifyPersonnel($incident);
-        $this->notifyCaller($incident, $data['contact_number'] ?? $reporter->contact_number);
+        if ($autoVerified) {
+            $this->notifyVerifiedIncident($incident);
+        } else {
+            $this->notifyPersonnel($incident);
+            $this->notifyCaller($incident, $data['contact_number'] ?? $reporter->contact_number);
+        }
 
         return $incident;
     }
 
     public function createCallerBased(User $encoder, array $data): Incident
     {
-        $incident = DB::transaction(function () use ($encoder, $data) {
+        $assignedUnit = $data['assigned_unit'] ?? null;
+        unset($data['assigned_unit']);
+
+        $autoVerified = $this->isOperationsRole($encoder);
+        $status = $autoVerified ? IncidentStatus::Verified : IncidentStatus::UnderVerification;
+
+        $incident = DB::transaction(function () use ($encoder, $data, $status, $autoVerified, $assignedUnit) {
             $incident = $encoder->incidents()->create([
                 ...$data,
                 'source' => IncidentSource::CallerBased,
-                'status' => IncidentStatus::UnderVerification,
+                'status' => $status,
+                'verified_at' => $autoVerified ? now() : null,
+                'assigned_unit' => $autoVerified ? $assignedUnit : null,
                 'reported_at' => now(),
             ]);
 
-            $this->logStatus($incident, $encoder, IncidentStatus::UnderVerification, 'Caller-based report encoded.');
+            $this->logStatus(
+                $incident,
+                $encoder,
+                $status,
+                $autoVerified ? 'Caller-based report encoded and verified.' : 'Caller-based report encoded.',
+            );
 
             return $incident;
         });
 
-        $this->notifyPersonnel($incident);
+        if ($autoVerified) {
+            $this->notifyVerifiedIncident($incident);
+        } else {
+            $this->notifyPersonnel($incident);
+        }
 
         return $incident;
     }
@@ -166,6 +200,22 @@ class IncidentService
         $this->notifyAssignedResponders($incident);
 
         return $incident;
+    }
+
+    private function isOperationsRole(User $user): bool
+    {
+        return in_array($user->role?->value, UserRole::operationsRoles(), true);
+    }
+
+    private function notifyVerifiedIncident(Incident $incident): void
+    {
+        $this->notifyReporter($incident);
+
+        if ($incident->assigned_unit) {
+            $this->notifyAssignedResponders($incident);
+        }
+
+        $this->notifyPriorityAlert($incident);
     }
 
     private function attachEvidence(Incident $incident, ?UploadedFile $file): void

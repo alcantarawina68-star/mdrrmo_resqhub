@@ -53,6 +53,14 @@
                             </select>
                         </div>
 
+                        @if ($canAssignUnit)
+                            <div class="field">
+                                <label class="label" for="assigned_unit">Assigned unit <span class="normal-case">(optional)</span></label>
+                                <input id="assigned_unit" type="text" name="assigned_unit" class="input" value="{{ old('assigned_unit') }}" placeholder="Rescue 117">
+                                <p class="mt-1 text-xs text-muted">This report will be verified immediately.</p>
+                            </div>
+                        @endif
+
                         <div class="field">
                             <label class="label" for="location_label">Nearest barangay or landmark</label>
                             <select id="location_label" name="location_label" class="select">

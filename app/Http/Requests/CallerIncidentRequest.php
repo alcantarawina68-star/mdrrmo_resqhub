@@ -27,6 +27,7 @@ class CallerIncidentRequest extends FormRequest
             'priority' => ['required', 'string', 'in:'.implode(',', Priority::values())],
             'caller_name' => ['nullable', 'string', 'max:120'],
             'caller_contact' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
+            'assigned_unit' => ['nullable', 'string', 'max:120'],
         ];
     }
 }

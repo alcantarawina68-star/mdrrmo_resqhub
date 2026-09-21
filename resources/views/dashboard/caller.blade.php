@@ -54,6 +54,12 @@
             </div>
 
             <div class="field">
+                <label class="label" for="assigned_unit">Assigned unit <span class="normal-case">(optional)</span></label>
+                <input id="assigned_unit" type="text" name="assigned_unit" class="input" value="{{ old('assigned_unit') }}" placeholder="Rescue 117">
+                <p class="mt-1 text-xs text-muted">This report will be verified automatically.</p>
+            </div>
+
+            <div class="field">
                 <label class="label">Coordinates</label>
                 <p class="mono text-sm text-muted" x-text="lat && lng ? lat + ', ' + lng : 'Click the map to pin the location'"></p>
             </div>

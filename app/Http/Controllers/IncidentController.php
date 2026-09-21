@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\IncidentType;
 use App\Enums\Priority;
+use App\Enums\UserRole;
 use App\Http\Requests\StoreIncidentRequest;
 use App\Services\IncidentService;
 use App\Support\CamalBarangays;
@@ -21,6 +22,7 @@ class IncidentController extends Controller
             'types' => IncidentType::labels(),
             'priorities' => Priority::labels(),
             'barangays' => CamalBarangays::all(),
+            'canAssignUnit' => auth()->user()->hasRole(...UserRole::operationsRoles()),
         ]);
     }
 
@@ -28,9 +30,13 @@ class IncidentController extends Controller
     {
         $incident = $this->incidents->createOnline($request->user(), $request->validated());
 
+        $message = $request->user()->hasRole(...UserRole::operationsRoles())
+            ? 'Report '.$incident->incident_number.' submitted and verified.'
+            : 'Report received as '.$incident->incident_number.'. Our team will verify it shortly.';
+
         return redirect()
             ->route('my-reports')
-            ->with('status', 'Report received as '.$incident->incident_number.'. Our team will verify it shortly.');
+            ->with('status', $message);
     }
 
     public function myReports(Request $request): View

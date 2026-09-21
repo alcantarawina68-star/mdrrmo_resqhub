@@ -22,6 +22,6 @@ class CallerController extends Controller
 
         return redirect()
             ->route('dashboard.incidents.show', $incident)
-            ->with('status', 'Caller report '.$incident->incident_number.' encoded in under 90 seconds.');
+            ->with('status', 'Caller report '.$incident->incident_number.' encoded and verified in under 90 seconds.');
     }
 }
