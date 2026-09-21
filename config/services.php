@@ -18,9 +18,10 @@ return [
         'driver' => env('SMS_DRIVER', 'log'),
     ],
 
-    'huggingface' => [
-        'token' => env('HF_TOKEN'),
-        'detection_url' => env('HUGGINGFACE_DETECTION_URL', 'https://router.huggingface.co/hf-inference/models/dima806/ai_vs_human_generated_image_detection'),
+    'ai_detection' => [
+        'url' => env('AI_DETECTION_URL'),
+        'token' => env('AI_DETECTION_TOKEN'),
+        'timeout' => env('AI_DETECTION_TIMEOUT', 60),
     ],
 
     'postmark' => [

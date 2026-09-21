@@ -2,225 +2,210 @@
 
 use App\Enums\IncidentType;
 use App\Enums\Priority;
-use App\Jobs\AnalyzeImageAi;
+use App\Jobs\SendSms;
 use App\Models\Evidence;
 use App\Models\Incident;
 use App\Models\User;
-use App\Services\AiImageDetectionService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Sleep;
 
-test('submitting a report with an image stores evidence and queues AI analysis', function () {
-    Queue::fake([AnalyzeImageAi::class]);
+const AI_DETECTION_URL = 'http://ai.internal';
+
+function configureAiDetection(): void
+{
+    config([
+        'services.ai_detection.url' => AI_DETECTION_URL,
+        'services.ai_detection.token' => '',
+        'services.ai_detection.timeout' => 60,
+    ]);
+}
+
+function reportPayload(array $overrides = []): array
+{
+    return array_merge([
+        'incident_type' => IncidentType::Fire->value,
+        'description' => 'A suspicious fire at the market needs verification. Smoke was visible for hours.',
+        'latitude' => 18.28,
+        'longitude' => 121.68,
+        'priority' => Priority::High->value,
+    ], $overrides);
+}
+
+test('submitting a report with an image runs detection synchronously and saves the prediction', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
     Storage::fake('public');
-
-    $user = User::factory()->communityUser()->create();
-
-    $this->actingAs($user)
-        ->post(route('report.store'), [
-            'incident_type' => IncidentType::Fire->value,
-            'description' => 'A suspicious fire at the market needs verification. Smoke was visible for hours.',
-            'latitude' => 18.28,
-            'longitude' => 121.68,
-            'priority' => Priority::High->value,
-            'evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png'),
-        ])
-        ->assertRedirect(route('my-reports'));
-
-    $incident = $user->incidents()->first();
-    $evidence = $incident->evidence()->first();
-
-    expect($incident)->not->toBeNull();
-    expect($evidence->file_type)->toBe('image/png');
-    expect($evidence->file_size)->toBeGreaterThan(0);
-
-    Storage::disk('public')->assertExists($evidence->file_path);
-
-    Queue::assertPushed(AnalyzeImageAi::class, fn (AnalyzeImageAi $job) => $job->evidence->is($evidence));
-});
-
-test('an incident can be submitted without an image', function () {
-    Queue::fake([AnalyzeImageAi::class]);
-
-    $user = User::factory()->communityUser()->create();
-
-    $this->actingAs($user)
-        ->post(route('report.store'), [
-            'incident_type' => IncidentType::Fire->value,
-            'description' => 'A suspicious fire at the market needs verification. Smoke was visible for hours.',
-            'latitude' => 18.28,
-            'longitude' => 121.68,
-            'priority' => Priority::High->value,
-        ])
-        ->assertRedirect(route('my-reports'));
-
-    expect(Evidence::count())->toBe(0);
-
-    Queue::assertNothingPushed();
-});
-
-test('the analysis job records an AI-generated result', function () {
     Http::preventStrayRequests();
     Http::fake([
-        'router.huggingface.co/*' => Http::response(['label' => 'ai_generated', 'score' => 0.98], 200),
-    ]);
-    Storage::fake('public');
-
-    $incident = Incident::factory()->underVerification()->create();
-    Storage::disk('public')->put('evidence/photo.png', 'image-bytes');
-
-    $evidence = Evidence::create([
-        'incident_id' => $incident->id,
-        'file_path' => 'evidence/photo.png',
-        'file_type' => 'image/png',
-        'original_name' => 'photo.png',
-        'file_size' => 11,
-        'uploaded_at' => now(),
+        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'ai_generated', 'confidence' => 0.98], 200),
     ]);
 
-    (new AnalyzeImageAi($evidence))->handle(app(AiImageDetectionService::class));
+    $user = User::factory()->communityUser()->create();
+    $image = UploadedFile::fake()->create('scene.png', 100, 'image/png');
 
-    $evidence->refresh();
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => $image]))
+        ->assertRedirect(route('my-reports'));
 
-    expect($evidence->ai_is_generated)->toBeTrue();
+    $evidence = Evidence::first();
+
+    expect($evidence)->not->toBeNull();
     expect($evidence->ai_label)->toBe('ai_generated');
+    expect($evidence->ai_is_generated)->toBeTrue();
     expect($evidence->ai_score)->toBe(0.98);
     expect($evidence->ai_analyzed_at)->not->toBeNull();
     expect($evidence->ai_error)->toBeNull();
 
-    Http::assertSent(fn (Request $request) => str_contains($request->url(), 'dima806/ai_vs_human_generated_image_detection'));
+    Http::assertSent(function (Request $request) use ($image) {
+        return $request->url() === AI_DETECTION_URL.'/predict'
+            && $request->method() === 'POST'
+            && $request->hasFile('file', $image->getContent());
+    });
 });
 
-test('the analysis job records a human-generated result', function () {
+test('the prediction marks human-generated images as real', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
+    Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        'router.huggingface.co/*' => Http::response(['label' => 'human_generated', 'score' => 0.91], 200),
-    ]);
-    Storage::fake('public');
-
-    $incident = Incident::factory()->underVerification()->create();
-    Storage::disk('public')->put('evidence/photo.png', 'image-bytes');
-
-    $evidence = Evidence::create([
-        'incident_id' => $incident->id,
-        'file_path' => 'evidence/photo.png',
-        'file_type' => 'image/png',
-        'original_name' => 'photo.png',
-        'file_size' => 11,
-        'uploaded_at' => now(),
+        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'human_generated', 'confidence' => 0.91], 200),
     ]);
 
-    (new AnalyzeImageAi($evidence))->handle(app(AiImageDetectionService::class));
+    $user = User::factory()->communityUser()->create();
 
-    $evidence->refresh();
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
+
+    $evidence = Evidence::first();
 
     expect($evidence->ai_is_generated)->toBeFalse();
+    expect($evidence->ai_score)->toBe(0.91);
     expect($evidence->ai_error)->toBeNull();
 });
 
-test('the analysis job retries transient failures before marking the evidence as failed', function () {
+test('a report can be submitted without an image', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
     Http::preventStrayRequests();
-    Http::fake([
-        'router.huggingface.co/*' => Http::response('Upstream model error', 503),
-    ]);
-    Storage::fake('public');
-    Sleep::fake();
 
-    $incident = Incident::factory()->underVerification()->create();
-    Storage::disk('public')->put('evidence/photo.png', 'image-bytes');
+    $user = User::factory()->communityUser()->create();
 
-    $evidence = Evidence::create([
-        'incident_id' => $incident->id,
-        'file_path' => 'evidence/photo.png',
-        'file_type' => 'image/png',
-        'original_name' => 'photo.png',
-        'file_size' => 11,
-        'uploaded_at' => now(),
-    ]);
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload())
+        ->assertRedirect(route('my-reports'));
 
-    (new AnalyzeImageAi($evidence))->handle(app(AiImageDetectionService::class));
-
-    $evidence->refresh();
-
-    expect($evidence->ai_is_generated)->toBeNull();
-    expect($evidence->ai_error)->not->toBeNull();
-    expect($evidence->ai_error)->toContain('503');
-
-    Http::assertSentCount(3);
-    Sleep::assertSlept(fn ($duration) => $duration->totalSeconds === 5.0, 2);
+    expect(Evidence::count())->toBe(0);
+    Http::assertNothingSent();
 });
 
-test('the analysis job succeeds when a transient error clears on retry', function () {
+test('the submission still completes when the AI service is unavailable', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
+    Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        'router.huggingface.co/*' => Http::sequence()
-            ->push('Model is loading', 503)
-            ->push(['label' => 'ai_generated', 'score' => 0.97], 200)
-            ->whenEmpty(Http::response([], 500)),
-    ]);
-    Storage::fake('public');
-    Sleep::fake();
-
-    $incident = Incident::factory()->underVerification()->create();
-    Storage::disk('public')->put('evidence/photo.png', 'image-bytes');
-
-    $evidence = Evidence::create([
-        'incident_id' => $incident->id,
-        'file_path' => 'evidence/photo.png',
-        'file_type' => 'image/png',
-        'original_name' => 'photo.png',
-        'file_size' => 11,
-        'uploaded_at' => now(),
+        AI_DETECTION_URL.'/predict' => fn () => throw new ConnectionException('cURL error 7: Failed to connect to ai.internal port 80 after 1000 ms: Connection refused'),
     ]);
 
-    (new AnalyzeImageAi($evidence))->handle(app(AiImageDetectionService::class));
+    $user = User::factory()->communityUser()->create();
 
-    $evidence->refresh();
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
 
-    expect($evidence->ai_is_generated)->toBeTrue();
-    expect($evidence->ai_score)->toBe(0.97);
-    expect($evidence->ai_error)->toBeNull();
-
-    Http::assertSentCount(2);
-    Sleep::assertSlept(fn ($duration) => $duration->totalSeconds === 5.0, 1);
+    expect(Evidence::first()->ai_error)->toContain('AI service unavailable');
 });
 
-test('the analysis job fails fast on authorization errors', function () {
+test('the submission still completes when the AI detection times out', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
+    Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        'router.huggingface.co/*' => Http::response('Invalid or missing token', 401),
+        AI_DETECTION_URL.'/predict' => fn () => throw new ConnectionException('cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received'),
     ]);
+
+    $user = User::factory()->communityUser()->create();
+
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
+
+    expect(Evidence::first()->ai_error)->toContain('AI detection timed out');
+});
+
+test('a malformed AI response is handled safely', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
     Storage::fake('public');
-    Sleep::fake();
-
-    $incident = Incident::factory()->underVerification()->create();
-    Storage::disk('public')->put('evidence/photo.png', 'image-bytes');
-
-    $evidence = Evidence::create([
-        'incident_id' => $incident->id,
-        'file_path' => 'evidence/photo.png',
-        'file_type' => 'image/png',
-        'original_name' => 'photo.png',
-        'file_size' => 11,
-        'uploaded_at' => now(),
+    Http::preventStrayRequests();
+    Http::fake([
+        AI_DETECTION_URL.'/predict' => Http::response('not a json body', 200),
     ]);
 
-    (new AnalyzeImageAi($evidence))->handle(app(AiImageDetectionService::class));
+    $user = User::factory()->communityUser()->create();
 
-    $evidence->refresh();
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
 
-    expect($evidence->ai_error)->not->toBeNull();
-    expect($evidence->ai_error)->toContain('401');
+    expect(Evidence::first()->ai_error)->toContain('Invalid AI detection response');
+});
 
-    Http::assertSentCount(1);
-    Sleep::assertSlept(fn () => true, 0);
+test('an unsuccessful AI response is recorded as failed', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
+    Storage::fake('public');
+    Http::preventStrayRequests();
+    Http::fake([
+        AI_DETECTION_URL.'/predict' => Http::response('Upstream model error', 503),
+    ]);
+
+    $user = User::factory()->communityUser()->create();
+
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
+
+    expect(Evidence::first()->ai_error)->toContain('AI detection failed (HTTP 503)');
+});
+
+test('an unauthenticated user cannot submit a report', function () {
+    configureAiDetection();
+
+    $this->post(route('report.store'), reportPayload())
+        ->assertRedirect('/login');
+
+    expect(Evidence::count())->toBe(0);
+});
+
+test('non-AI jobs still run after a report submission', function () {
+    configureAiDetection();
+    Queue::fake([SendSms::class]);
+    Storage::fake('public');
+    Http::preventStrayRequests();
+    Http::fake([
+        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'ai_generated', 'confidence' => 0.98], 200),
+    ]);
+
+    $user = User::factory()->communityUser()->create();
+
+    $this->actingAs($user)
+        ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
+        ->assertRedirect(route('my-reports'));
+
+    Queue::assertPushed(SendSms::class);
 });
 
 test('the dashboard incident page shows the AI verdict for analyzed evidence', function () {
+    configureAiDetection();
+
     $admin = User::factory()->admin()->create();
     $incident = Incident::factory()->underVerification()->create();
 
@@ -245,6 +230,8 @@ test('the dashboard incident page shows the AI verdict for analyzed evidence', f
 });
 
 test('the dashboard incident page shows a pending state before the AI check completes', function () {
+    configureAiDetection();
+
     $admin = User::factory()->admin()->create();
     $incident = Incident::factory()->underVerification()->create();
 
@@ -264,6 +251,8 @@ test('the dashboard incident page shows a pending state before the AI check comp
 });
 
 test('the public incident page shows the AI verdict for analyzed evidence', function () {
+    configureAiDetection();
+
     $incident = Incident::factory()->verified()->create();
 
     Evidence::create([

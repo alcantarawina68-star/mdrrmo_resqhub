@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
         </div>
 
-        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data" @submit="submitting = true">
             @csrf
 
             <div class="lg:col-span-3">
@@ -93,7 +93,10 @@
                             Report anonymously
                         </label>
 
-                        <button type="submit" class="btn btn-primary w-full">Submit Report</button>
+                        <button type="submit" class="btn btn-primary w-full" :disabled="submitting">
+                            <span x-show="!submitting">Submit Report</span>
+                            <span x-show="submitting">Analyzing image...</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -108,6 +111,7 @@
                 map: null,
                 marker: null,
                 locating: false,
+                submitting: false,
                 geoError: '',
                 init() {
                     const el = document.getElementById('report-map');

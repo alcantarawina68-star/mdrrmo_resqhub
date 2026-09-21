@@ -6,7 +6,6 @@ use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Priority;
 use App\Enums\UserRole;
-use App\Jobs\AnalyzeImageAi;
 use App\Jobs\SendSms;
 use App\Models\Evidence;
 use App\Models\Incident;
@@ -14,10 +13,15 @@ use App\Models\StatusLog;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Throwable;
 
 class IncidentService
 {
+    public function __construct(private readonly AiImageDetectionService $aiDetection) {}
+
     public function createOnline(User $reporter, array $data): Incident
     {
         $attachment = $data['evidence'] ?? null;
@@ -235,7 +239,42 @@ class IncidentService
             'uploaded_at' => now(),
         ]);
 
-        AnalyzeImageAi::dispatch($evidence);
+        $this->analyzeEvidence($evidence);
+    }
+
+    private function analyzeEvidence(Evidence $evidence): void
+    {
+        try {
+            $result = $this->aiDetection->detect(Storage::disk('public')->path($evidence->file_path));
+
+            $evidence->update([
+                'ai_label' => $result['label'],
+                'ai_is_generated' => $result['is_ai_generated'],
+                'ai_score' => $result['score'],
+                'ai_analyzed_at' => now(),
+                'ai_error' => null,
+            ]);
+        } catch (RuntimeException $exception) {
+            Log::error('AI image detection failed', [
+                'evidence_id' => $evidence->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $evidence->update([
+                'ai_error' => $exception->getMessage(),
+                'ai_analyzed_at' => now(),
+            ]);
+        } catch (Throwable $exception) {
+            Log::error('AI image detection failed unexpectedly', [
+                'evidence_id' => $evidence->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $evidence->update([
+                'ai_error' => 'AI detection failed.',
+                'ai_analyzed_at' => now(),
+            ]);
+        }
     }
 
     private function logStatus(Incident $incident, User $actor, IncidentStatus $newStatus, ?string $note = null): void
