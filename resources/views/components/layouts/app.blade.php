@@ -79,7 +79,7 @@
             </div>
         </div>
 
-        <div x-data x-show="$store.mobileMenu.open" x-cloak @keydown.escape.window="$store.mobileMenu.open = false" class="border-t border-border bg-surface md:hidden">
+        <div x-data x-show="$store.mobileMenu.open" x-cloak @keydown.escape.window="$store.mobileMenu.open = false" class="fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg md:hidden">
             <div class="flex flex-col gap-1 px-4 py-3" @click="$store.mobileMenu.open = false">
                 <a href="{{ route('home') }}" class="nav-link">Live Map</a>
                 <a href="{{ route('advisories') }}" class="nav-link">Advisories</a>

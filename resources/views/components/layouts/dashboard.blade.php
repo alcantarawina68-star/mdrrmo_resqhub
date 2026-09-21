@@ -88,7 +88,7 @@
                 </div>
             </header>
 
-            <div x-data x-show="$store.dashNav.open" x-cloak @keydown.escape.window="$store.dashNav.open = false" class="border-b border-border bg-surface lg:hidden">
+            <div x-data x-show="$store.dashNav.open" x-cloak @keydown.escape.window="$store.dashNav.open = false" class="fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg lg:hidden">
                 <nav class="flex flex-col gap-1 p-3" @click="$store.dashNav.open = false">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Overview</a>
                     <a href="{{ route('dashboard.incidents') }}" class="nav-link {{ request()->routeIs('dashboard.incidents*') && ! request()->routeIs('dashboard.incidents.show') ? 'nav-link-active' : '' }}">Incidents</a>
