@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\SmsMessage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class SmsService
 {
@@ -67,7 +69,31 @@ class SmsService
 
         match ($driver) {
             'log' => Log::info("SMS to {$phone}: {$message}"),
-            default => throw new \RuntimeException("Unsupported SMS driver [{$driver}]."),
+            'semaphore' => $this->deliverViaSemaphore($phone, $message),
+            default => throw new RuntimeException("Unsupported SMS driver [{$driver}]."),
         };
+    }
+
+    private function deliverViaSemaphore(string $phone, string $message): void
+    {
+        $config = config('services.sms.semaphore', []);
+
+        $payload = [
+            'apikey' => (string) ($config['key'] ?? ''),
+            'number' => $phone,
+            'message' => $message,
+        ];
+
+        if (! blank($config['sender'] ?? null)) {
+            $payload['sendername'] = $config['sender'];
+        }
+
+        $response = Http::timeout((int) ($config['timeout'] ?? 15))
+            ->asForm()
+            ->post((string) ($config['url'] ?? 'https://api.semaphore.co/api/v4/messages'), $payload);
+
+        if ($response->failed()) {
+            throw new RuntimeException("Semaphore SMS failed (HTTP {$response->status()}): {$response->body()}");
+        }
     }
 }

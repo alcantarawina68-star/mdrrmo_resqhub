@@ -88,6 +88,13 @@
                             <input id="contact_number" type="tel" name="contact_number" class="input" value="{{ old('contact_number', auth()->user()->contact_number) }}" placeholder="0917 123 4567">
                         </div>
 
+                        <div class="field">
+                            <label class="label" for="emergency_contact">Emergency contact <span class="normal-case">(optional)</span></label>
+                            <input id="emergency_contact" type="tel" name="emergency_contact" class="input" value="{{ old('emergency_contact') }}" placeholder="0917 123 4567">
+                            <p class="mt-1 text-xs text-muted">This number receives SMS status updates for this report.</p>
+                            @error('emergency_contact') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
+                        </div>
+
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
                             <input type="checkbox" name="is_anonymous" value="1" class="h-4 w-4 accent-[var(--color-primary)]" @checked(old('is_anonymous'))>
                             Report anonymously

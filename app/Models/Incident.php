@@ -28,6 +28,7 @@ class Incident extends Model
         'source',
         'caller_name',
         'caller_contact',
+        'emergency_contact',
         'is_anonymous',
         'status',
         'priority',

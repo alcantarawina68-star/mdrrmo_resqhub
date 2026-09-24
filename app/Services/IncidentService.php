@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Jobs\SendSms;
 use App\Models\Evidence;
@@ -54,12 +53,7 @@ class IncidentService
             return $incident;
         });
 
-        if ($autoVerified) {
-            $this->notifyVerifiedIncident($incident);
-        } else {
-            $this->notifyPersonnel($incident);
-            $this->notifyCaller($incident, $data['contact_number'] ?? $reporter->contact_number);
-        }
+        $this->notifyEmergencyContact($incident, $this->receivedMessage($incident));
 
         return $incident;
     }
@@ -92,11 +86,7 @@ class IncidentService
             return $incident;
         });
 
-        if ($autoVerified) {
-            $this->notifyVerifiedIncident($incident);
-        } else {
-            $this->notifyPersonnel($incident);
-        }
+        $this->notifyEmergencyContact($incident, $this->receivedMessage($incident));
 
         return $incident;
     }
@@ -129,12 +119,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyReporter($incident);
-
-        if ($approved) {
-            $this->notifyAssignedResponders($incident);
-            $this->notifyPriorityAlert($incident);
-        }
+        $this->notifyEmergencyContact($incident, $this->statusMessage($incident));
 
         return $incident;
     }
@@ -159,11 +144,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyReporter($incident);
-
-        if ($incident->assigned_unit) {
-            $this->notifyAssignedResponders($incident);
-        }
+        $this->notifyEmergencyContact($incident, $this->statusMessage($incident));
 
         return $incident;
     }
@@ -201,7 +182,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyAssignedResponders($incident);
+        $this->notifyEmergencyContact($incident, "ResQHub: Your incident {$incident->incident_number} has been assigned to {$incident->assigned_unit}.");
 
         return $incident;
     }
@@ -209,17 +190,6 @@ class IncidentService
     private function isOperationsRole(User $user): bool
     {
         return in_array($user->role?->value, UserRole::operationsRoles(), true);
-    }
-
-    private function notifyVerifiedIncident(Incident $incident): void
-    {
-        $this->notifyReporter($incident);
-
-        if ($incident->assigned_unit) {
-            $this->notifyAssignedResponders($incident);
-        }
-
-        $this->notifyPriorityAlert($incident);
     }
 
     private function attachEvidence(Incident $incident, ?UploadedFile $file): void
@@ -289,83 +259,26 @@ class IncidentService
         ]);
     }
 
-    private function notifyPersonnel(Incident $incident): void
+    private function notifyEmergencyContact(Incident $incident, string $message): void
     {
-        $personnel = User::query()
-            ->active()
-            ->whereIn('role', UserRole::operationsRoles())
-            ->get();
+        $phone = $incident->emergency_contact
+            ?? $incident->caller_contact
+            ?? $incident->reporter?->contact_number;
 
-        $message = "ResQHub: New {$incident->incident_type->label()} report ({$incident->incident_number}) at {$incident->location_label}.";
-        $this->dispatchToUsers($personnel, $message);
-    }
-
-    private function notifyReporter(Incident $incident): void
-    {
-        $reporter = $incident->reporter;
-
-        if (! $reporter?->contact_number) {
-            return;
-        }
-
-        $message = "ResQHub: Your incident {$incident->incident_number} is now {$incident->status->label()}. Status updates will be sent here.";
-
-        $this->dispatchToUsers(collect([$reporter]), $message);
-    }
-
-    private function notifyAssignedResponders(Incident $incident): void
-    {
-        $responders = User::query()
-            ->active()
-            ->where('role', UserRole::Responder->value)
-            ->get();
-
-        if ($responders->isEmpty()) {
-            return;
-        }
-
-        $message = "ResQHub: Assignment - {$incident->incident_number} ({$incident->incident_type->label()}) at {$incident->location_label} assigned to {$incident->assigned_unit}.";
-
-        $this->dispatchToUsers($responders, $message);
-    }
-
-    private function notifyPriorityAlert(Incident $incident): void
-    {
-        if ($incident->priority !== Priority::Urgent) {
-            return;
-        }
-
-        $staff = User::query()
-            ->active()
-            ->whereIn('role', [
-                UserRole::Admin->value,
-                UserRole::Encoder->value,
-                UserRole::Responder->value,
-            ])
-            ->get();
-
-        $message = "URGENT: Verified {$incident->incident_type->label()} ({$incident->incident_number}) at {$incident->location_label} requires immediate attention.";
-
-        $this->dispatchToUsers($staff, $message);
-    }
-
-    private function notifyCaller(Incident $incident, ?string $phone): void
-    {
         if (! $phone) {
             return;
         }
 
-        $message = "ResQHub: Your report was received ({$incident->incident_number}). Track it at ".site_setting('website', 'resqhub.ph').'/my-reports.';
-
         SendSms::dispatch($phone, $message);
     }
 
-    private function dispatchToUsers(iterable $users, string $message): void
+    private function receivedMessage(Incident $incident): string
     {
-        foreach ($users as $user) {
-            if ($user->contact_number) {
-                SendSms::dispatch($user->contact_number, $message);
-            }
-        }
+        return 'ResQHub: Your report was received ('.$incident->incident_number.'). Track it at '.site_setting('website', 'resqhub.ph').'/my-reports.';
+    }
+
+    private function statusMessage(Incident $incident): string
+    {
+        return 'ResQHub: Your incident '.$incident->incident_number.' is now '.$incident->status->label().'.';
     }
 }
