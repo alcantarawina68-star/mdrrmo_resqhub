@@ -4,54 +4,92 @@ namespace App\Services;
 
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Jobs\SendSms;
+use App\Models\Evidence;
 use App\Models\Incident;
 use App\Models\StatusLog;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Throwable;
 
 class IncidentService
 {
+    public function __construct(
+        private readonly AiImageDetectionService $aiDetection,
+        private readonly SmsService $sms,
+    ) {}
+
     public function createOnline(User $reporter, array $data): Incident
     {
-        $incident = DB::transaction(function () use ($reporter, $data) {
+        $attachment = $data['evidence'] ?? null;
+        unset($data['evidence']);
+
+        $assignedUnit = $data['assigned_unit'] ?? null;
+        unset($data['assigned_unit']);
+
+        $autoVerified = $this->isOperationsRole($reporter);
+        $status = $autoVerified ? IncidentStatus::Verified : IncidentStatus::UnderVerification;
+
+        $incident = DB::transaction(function () use ($reporter, $data, $attachment, $status, $autoVerified, $assignedUnit) {
             $incident = $reporter->incidents()->create([
                 ...$data,
                 'source' => IncidentSource::Online,
-                'status' => IncidentStatus::UnderVerification,
+                'status' => $status,
+                'verified_at' => $autoVerified ? now() : null,
+                'assigned_unit' => $autoVerified ? $assignedUnit : null,
                 'reported_at' => now(),
             ]);
 
-            $this->logStatus($incident, $reporter, IncidentStatus::UnderVerification, 'Incident submitted online.');
+            $this->attachEvidence($incident, $attachment);
+            $this->logStatus(
+                $incident,
+                $reporter,
+                $status,
+                $autoVerified ? 'Incident submitted online and verified.' : 'Incident submitted online.',
+            );
 
             return $incident;
         });
 
-        $this->notifyPersonnel($incident);
-        $this->notifyCaller($incident, $data['contact_number'] ?? $reporter->contact_number);
+        $this->notifyEmergencyContact($incident, $autoVerified ? 'Your report was received and is now verified.' : 'Your report was received.');
 
         return $incident;
     }
 
     public function createCallerBased(User $encoder, array $data): Incident
     {
-        $incident = DB::transaction(function () use ($encoder, $data) {
+        $assignedUnit = $data['assigned_unit'] ?? null;
+        unset($data['assigned_unit']);
+
+        $autoVerified = $this->isOperationsRole($encoder);
+        $status = $autoVerified ? IncidentStatus::Verified : IncidentStatus::UnderVerification;
+
+        $incident = DB::transaction(function () use ($encoder, $data, $status, $autoVerified, $assignedUnit) {
             $incident = $encoder->incidents()->create([
                 ...$data,
                 'source' => IncidentSource::CallerBased,
-                'status' => IncidentStatus::UnderVerification,
+                'status' => $status,
+                'verified_at' => $autoVerified ? now() : null,
+                'assigned_unit' => $autoVerified ? $assignedUnit : null,
                 'reported_at' => now(),
             ]);
 
-            $this->logStatus($incident, $encoder, IncidentStatus::UnderVerification, 'Caller-based report encoded.');
+            $this->logStatus(
+                $incident,
+                $encoder,
+                $status,
+                $autoVerified ? 'Caller-based report encoded and verified.' : 'Caller-based report encoded.',
+            );
 
             return $incident;
         });
 
-        $this->notifyPersonnel($incident);
+        $this->notifyEmergencyContact($incident, $autoVerified ? 'Your report was received and is now verified.' : 'Your report was received.');
 
         return $incident;
     }
@@ -84,12 +122,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyReporter($incident);
-
-        if ($approved) {
-            $this->notifyAssignedResponders($incident);
-            $this->notifyPriorityAlert($incident);
-        }
+        $this->notifyEmergencyContact($incident, $approved ? 'Your report has been verified.' : 'Your report was not approved.');
 
         return $incident;
     }
@@ -114,11 +147,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyReporter($incident);
-
-        if ($incident->assigned_unit) {
-            $this->notifyAssignedResponders($incident);
-        }
+        $this->notifyEmergencyContact($incident, 'Status is now '.$incident->status->label().'.');
 
         return $incident;
     }
@@ -156,9 +185,69 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyAssignedResponders($incident);
+        $this->notifyEmergencyContact($incident, 'The incident was assigned to '.$incident->assigned_unit.'.');
 
         return $incident;
+    }
+
+    private function isOperationsRole(User $user): bool
+    {
+        return in_array($user->role?->value, UserRole::operationsRoles(), true);
+    }
+
+    private function attachEvidence(Incident $incident, ?UploadedFile $file): void
+    {
+        if ($file === null) {
+            return;
+        }
+
+        $path = $file->store('evidence', 'public');
+
+        $evidence = Evidence::create([
+            'incident_id' => $incident->id,
+            'file_path' => $path,
+            'file_type' => $file->getMimeType() ?: $file->guessExtension(),
+            'original_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'uploaded_at' => now(),
+        ]);
+
+        $this->analyzeEvidence($evidence);
+    }
+
+    private function analyzeEvidence(Evidence $evidence): void
+    {
+        try {
+            $result = $this->aiDetection->detect(Storage::disk('public')->path($evidence->file_path));
+
+            $evidence->update([
+                'ai_label' => $result['label'],
+                'ai_is_generated' => $result['is_ai_generated'],
+                'ai_score' => $result['score'],
+                'ai_analyzed_at' => now(),
+                'ai_error' => null,
+            ]);
+        } catch (RuntimeException $exception) {
+            Log::error('AI image detection failed', [
+                'evidence_id' => $evidence->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $evidence->update([
+                'ai_error' => $exception->getMessage(),
+                'ai_analyzed_at' => now(),
+            ]);
+        } catch (Throwable $exception) {
+            Log::error('AI image detection failed unexpectedly', [
+                'evidence_id' => $evidence->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $evidence->update([
+                'ai_error' => 'AI detection failed.',
+                'ai_analyzed_at' => now(),
+            ]);
+        }
     }
 
     private function logStatus(Incident $incident, User $actor, IncidentStatus $newStatus, ?string $note = null): void
@@ -173,83 +262,61 @@ class IncidentService
         ]);
     }
 
-    private function notifyPersonnel(Incident $incident): void
+    private function notifyEmergencyContact(Incident $incident, string $event): void
     {
-        $personnel = User::query()
-            ->active()
-            ->whereIn('role', UserRole::operationsRoles())
-            ->get();
+        $phone = $incident->emergencyContactPhone();
 
-        $message = "ResQHub: New {$incident->incident_type->label()} report ({$incident->incident_number}) at {$incident->location_label}.";
-        $this->dispatchToUsers($personnel, $message);
-    }
-
-    private function notifyReporter(Incident $incident): void
-    {
-        $reporter = $incident->reporter;
-
-        if (! $reporter?->contact_number) {
-            return;
-        }
-
-        $message = "ResQHub: Your incident {$incident->incident_number} is now {$incident->status->label()}. Status updates will be sent here.";
-
-        $this->dispatchToUsers(collect([$reporter]), $message);
-    }
-
-    private function notifyAssignedResponders(Incident $incident): void
-    {
-        $responders = User::query()
-            ->active()
-            ->where('role', UserRole::Responder->value)
-            ->get();
-
-        if ($responders->isEmpty()) {
-            return;
-        }
-
-        $message = "ResQHub: Assignment - {$incident->incident_number} ({$incident->incident_type->label()}) at {$incident->location_label} assigned to {$incident->assigned_unit}.";
-
-        $this->dispatchToUsers($responders, $message);
-    }
-
-    private function notifyPriorityAlert(Incident $incident): void
-    {
-        if ($incident->priority !== Priority::Urgent) {
-            return;
-        }
-
-        $staff = User::query()
-            ->active()
-            ->whereIn('role', [
-                UserRole::Admin->value,
-                UserRole::Encoder->value,
-                UserRole::Responder->value,
-            ])
-            ->get();
-
-        $message = "URGENT: Verified {$incident->incident_type->label()} ({$incident->incident_number}) at {$incident->location_label} requires immediate attention.";
-
-        $this->dispatchToUsers($staff, $message);
-    }
-
-    private function notifyCaller(Incident $incident, ?string $phone): void
-    {
         if (! $phone) {
             return;
         }
 
-        $message = "ResQHub: Your report was received ({$incident->incident_number}). Track it at resqhub.ph/my-reports.";
-
-        SendSms::dispatch($phone, $message);
+        SendSms::dispatch($phone, $this->contactMessage($incident, $event, filled($incident->emergency_contact)), $incident->id);
     }
 
-    private function dispatchToUsers(iterable $users, string $message): void
+    /**
+     * Send the emergency-contact SMS right now (no queue) and record the delivery
+     * in the incident's status history.
+     */
+    public function resendContactNotification(Incident $incident): bool
     {
-        foreach ($users as $user) {
-            if ($user->contact_number) {
-                SendSms::dispatch($user->contact_number, $message);
-            }
+        $phone = $incident->emergencyContactPhone();
+
+        if (! $phone || $incident->hasSentContactSms()) {
+            return false;
         }
+
+        return $this->sms->sendForIncident($phone, $this->contactMessage($incident, 'You are the designated contact and will receive updates about this incident.', filled($incident->emergency_contact)), $incident);
+    }
+
+    private function contactMessage(Incident $incident, string $event, bool $isEmergencyContact): string
+    {
+        $person = $this->personName($incident);
+        $type = $incident->incident_type->label();
+        $number = $incident->incident_number;
+
+        if ($isEmergencyContact) {
+            $intro = $person
+                ? "{$person} listed this number as their emergency contact for a {$type} incident ({$number})."
+                : "This number was registered as the emergency contact for a {$type} incident ({$number}).";
+        } else {
+            $intro = $person
+                ? "{$person} is involved in a {$type} incident ({$number})."
+                : "This number is listed for a {$type} incident ({$number}).";
+        }
+
+        return 'ResQHub: '.$intro.' '.$event.' Track updates here: '.site_setting('website', 'resqhub.ph').'/my-reports.';
+    }
+
+    private function personName(Incident $incident): ?string
+    {
+        if ($incident->source === IncidentSource::CallerBased) {
+            return $incident->caller_name;
+        }
+
+        if ($incident->reporter?->role?->value === UserRole::CommunityUser->value) {
+            return $incident->reporter->name;
+        }
+
+        return null;
     }
 }

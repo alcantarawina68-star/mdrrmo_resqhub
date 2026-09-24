@@ -9,6 +9,7 @@ use App\Http\Controllers\PasswordConfirmController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionManagementController;
+use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
 
     Route::middleware('role:superadmin,admin,encoder')->group(function () {
         Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->middleware('reauthenticate')->name('dashboard.incidents.verify');
+        Route::post('/incidents/{incident}/notify', [DashboardController::class, 'notifyEmergencyContact'])->middleware('reauthenticate')->name('dashboard.incidents.notify');
         Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
         Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
 
@@ -56,6 +58,9 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
             Route::post('/users/{user}', [UserController::class, 'update'])->middleware('reauthenticate')->name('dashboard.users.update');
             Route::post('/users/{user}/reset-password', [UserController::class, 'sendResetLink'])->middleware('reauthenticate')->name('dashboard.users.reset-password');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('reauthenticate')->name('dashboard.users.destroy');
+
+            Route::get('/settings', [SiteSettingController::class, 'index'])->name('dashboard.settings');
+            Route::post('/settings', [SiteSettingController::class, 'update'])->middleware('reauthenticate')->name('dashboard.settings.update');
         });
 
         Route::middleware('role:superadmin')->group(function () {

@@ -1,0 +1,221 @@
+<?php
+
+namespace Semaphore;
+
+use GuzzleHttp\Client;
+use Psr\Http\Message\StreamInterface;
+
+/**
+ * vendored from kickstartph/semaphore-client (MIT, https://github.com/Kickstart/semaphore-client)
+ * changes from upstream: the "timeout" client option, the https API_BASE,
+ * and sendername is only sent when one is set (Semaphore docs: omitting it defaults to
+ * your registered sender name; sending an unregistered name errors with "Invalid sender name").
+ */
+class SemaphoreClient
+{
+    public const API_BASE = 'https://api.semaphore.co/api/v4/';
+
+    public $apikey;
+
+    public $senderName = null;
+
+    protected $client;
+
+    /**
+     * SemaphoreClient constructor.
+     *
+     * @param  string  $apikey
+     * @param  array<string, mixed>  $options  (e.g. sendername, apiBase, timeout)
+     */
+    public function __construct($apikey, array $options)
+    {
+        $this->apikey = $apikey;
+
+        if (isset($options['sendername'])) {
+            $this->senderName = $options['sendername'];
+        }
+
+        $apiBase = SemaphoreClient::API_BASE;
+        if (isset($options['apiBase'])) {
+            $apiBase = $options['apiBase'];
+        }
+
+        $this->client = new Client([
+            'base_uri' => $apiBase,
+            'query' => ['apikey' => $this->apikey],
+            'timeout' => (float) ($options['timeout'] ?? 15),
+        ]);
+    }
+
+    /**
+     * Check the balance of your account.
+     *
+     * @return StreamInterface
+     */
+    public function balance()
+    {
+        $response = $this->client->get('account');
+
+        return $response->getBody();
+    }
+
+    /**
+     * Send SMS message(s).
+     *
+     * @param  string  $recipient  The recipient phone number(s)
+     * @param  string  $message  The message you want to send
+     * @param  string|null  $sendername  Optional Sender ID (defaults to initialized value or SEMAPHORE)
+     * @return StreamInterface
+     *
+     * @throws \Exception
+     *
+     * @internal param $number
+     * @internal param null $senderId
+     * @internal param bool|false $bulk
+     */
+    public function send($recipient, $message, $sendername = null)
+    {
+        $recipients = explode(',', $recipient);
+        if (count($recipients) > 1000) {
+            throw new \Exception('API is limited to sending to 1000 recipients at a time');
+        }
+
+        $params = [
+            'form_params' => [
+                'apikey' => $this->apikey,
+                'message' => $message,
+                'number' => $recipient,
+            ],
+        ];
+
+        if ($this->senderName !== null) {
+            $params['form_params']['sendername'] = $this->senderName;
+        }
+
+        if ($sendername != null) {
+            $params['form_params']['sendername'] = $sendername;
+        }
+
+        $response = $this->client->post('messages', $params);
+
+        return $response->getBody();
+    }
+
+    /**
+     * Retrieves data about a specific message.
+     *
+     * @param  string  $messageId  The encoded ID of the message
+     * @return StreamInterface
+     */
+    public function message($messageId)
+    {
+        $params = [
+            'query' => [
+                'apikey' => $this->apikey,
+            ],
+        ];
+        $response = $this->client->get('messages/'.$messageId, $params);
+
+        return $response->getBody();
+    }
+
+    /**
+     * Retrieves up to 100 messages, offset by page.
+     *
+     * @param  array<string, mixed>  $options  (e.g. limit, page, startDate, endDate, status, network, sendername)
+     * @return StreamInterface
+     *
+     * @internal param null $page - Optional page for results past the initial 100
+     */
+    public function messages(array $options)
+    {
+        $params = [
+            'query' => [
+                'apikey' => $this->apikey,
+                'limit' => 100,
+                'page' => 1,
+            ],
+        ];
+
+        // Set optional parameters
+        if (array_key_exists('limit', $options)) {
+            $params['query']['limit'] = $options['limit'];
+        }
+
+        if (array_key_exists('page', $options)) {
+            $params['query']['page'] = $options['page'];
+        }
+
+        if (array_key_exists('startDate', $options)) {
+            $params['query']['startDate'] = $options['startDate'];
+        }
+
+        if (array_key_exists('endDate', $options)) {
+            $params['query']['endDate'] = $options['endDate'];
+        }
+
+        if (array_key_exists('status', $options)) {
+            $params['query']['status'] = $options['status'];
+        }
+
+        if (array_key_exists('network', $options)) {
+            $params['query']['network'] = $options['network'];
+        }
+
+        if (array_key_exists('sendername', $options)) {
+            $params['query']['sendername'] = $options['sendername'];
+        }
+
+        $response = $this->client->get('messages', $params);
+
+        return $response->getBody();
+    }
+
+    /**
+     * Get account details.
+     *
+     * @return StreamInterface
+     */
+    public function account()
+    {
+        $response = $this->client->get('account');
+
+        return $response->getBody();
+    }
+
+    /**
+     * Get users associated with the account.
+     *
+     * @return StreamInterface
+     */
+    public function users()
+    {
+        $response = $this->client->get('account/users');
+
+        return $response->getBody();
+    }
+
+    /**
+     * Get sender names associated with the account.
+     *
+     * @return StreamInterface
+     */
+    public function sendernames()
+    {
+        $response = $this->client->get('account/sendernames');
+
+        return $response->getBody();
+    }
+
+    /**
+     * Get transactions associated with the account.
+     *
+     * @return StreamInterface
+     */
+    public function transactions()
+    {
+        $response = $this->client->get('account/transactions');
+
+        return $response->getBody();
+    }
+}

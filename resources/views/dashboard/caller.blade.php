@@ -19,6 +19,12 @@
             </div>
 
             <div class="field">
+                <label class="label" for="emergency_contact">Emergency contact <span class="normal-case">(optional)</span></label>
+                <input id="emergency_contact" type="tel" name="emergency_contact" class="input" value="{{ old('emergency_contact') }}" placeholder="0917 123 4567">
+                <p class="mt-1 text-xs text-muted">This number receives SMS status updates for this report.</p>
+            </div>
+
+            <div class="field">
                 <label class="label" for="incident_type">Incident type</label>
                 <select id="incident_type" name="incident_type" class="select" required>
                     <option value="">Select type</option>
@@ -51,6 +57,12 @@
             <div class="field">
                 <label class="label" for="description">Narrative</label>
                 <textarea id="description" name="description" rows="5" class="textarea" minlength="20" required placeholder="What happened, where, who needs help.">{{ old('description') }}</textarea>
+            </div>
+
+            <div class="field">
+                <label class="label" for="assigned_unit">Assigned unit <span class="normal-case">(optional)</span></label>
+                <input id="assigned_unit" type="text" name="assigned_unit" class="input" value="{{ old('assigned_unit') }}" placeholder="Rescue 117">
+                <p class="mt-1 text-xs text-muted">This report will be verified automatically.</p>
             </div>
 
             <div class="field">

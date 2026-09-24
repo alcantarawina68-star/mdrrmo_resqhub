@@ -32,6 +32,7 @@ class IncidentResource extends JsonResource
             'is_anonymous' => $this->is_anonymous,
             'caller_name' => $this->caller_name,
             'caller_contact' => $this->caller_contact,
+            'emergency_contact' => $this->emergency_contact,
             'reported_at' => $this->reported_at?->toIso8601String(),
             'verified_at' => $this->verified_at?->toIso8601String(),
             'resolved_at' => $this->resolved_at?->toIso8601String(),

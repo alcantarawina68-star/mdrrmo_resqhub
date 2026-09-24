@@ -26,7 +26,10 @@ class StoreIncidentRequest extends FormRequest
             'location_label' => ['nullable', 'string', 'max:255'],
             'priority' => ['required', 'string', 'in:'.implode(',', Priority::values())],
             'contact_number' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
+            'emergency_contact' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'is_anonymous' => ['nullable', 'boolean'],
+            'assigned_unit' => ['nullable', 'string', 'max:120'],
+            'evidence' => ['nullable', 'file', 'image', 'mimes:jpeg,png', 'max:5120'],
         ];
     }
 }

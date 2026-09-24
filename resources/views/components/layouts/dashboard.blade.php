@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub Operations</title>
-    <meta name="description" content="ResQHub operations dashboard for the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="description" content="ResQHub operations dashboard for {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -42,6 +42,7 @@
 
                 @if ($isAdmin)
                     <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                    <a href="{{ route('dashboard.settings') }}" class="nav-link {{ request()->routeIs('dashboard.settings') ? 'nav-link-active' : '' }}">Site Info</a>
                 @endif
 
                 @if ($isSuperadmin)
@@ -87,7 +88,7 @@
                 </div>
             </header>
 
-            <div x-data x-show="$store.dashNav.open" x-cloak @keydown.escape.window="$store.dashNav.open = false" class="border-b border-border bg-surface lg:hidden">
+            <div x-data x-show="$store.dashNav.open" x-cloak @keydown.escape.window="$store.dashNav.open = false" class="fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg lg:hidden">
                 <nav class="flex flex-col gap-1 p-3" @click="$store.dashNav.open = false">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Overview</a>
                     <a href="{{ route('dashboard.incidents') }}" class="nav-link {{ request()->routeIs('dashboard.incidents*') && ! request()->routeIs('dashboard.incidents.show') ? 'nav-link-active' : '' }}">Incidents</a>
@@ -98,6 +99,7 @@
                     @endif
                     @if ($isAdmin)
                         <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users') ? 'nav-link-active' : '' }}">Users</a>
+                        <a href="{{ route('dashboard.settings') }}" class="nav-link {{ request()->routeIs('dashboard.settings') ? 'nav-link-active' : '' }}">Site Info</a>
                     @endif
 
                     @if ($isSuperadmin)

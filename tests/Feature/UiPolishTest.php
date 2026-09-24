@@ -42,3 +42,14 @@ test('the users page uses the branded delete confirmation dialog', function () {
 test('the live map incident card can be dismissed', function () {
     get('/')->assertOk()->assertSee('Close details');
 });
+
+test('mobile navigation menus stay pinned to the sticky header when scrolling', function () {
+    get('/')->assertOk()->assertSee('fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg md:hidden');
+
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg lg:hidden');
+});

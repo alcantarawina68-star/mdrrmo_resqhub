@@ -16,6 +16,19 @@ return [
 
     'sms' => [
         'driver' => env('SMS_DRIVER', 'log'),
+
+        'semaphore' => [
+            'url' => env('SEMAPHORE_URL', 'https://api.semaphore.co/api/v4'),
+            'key' => env('SEMAPHORE_API_KEY'),
+            'sender' => env('SEMAPHORE_SENDER_NAME'),
+            'timeout' => env('SEMAPHORE_TIMEOUT', 15),
+        ],
+    ],
+
+    'ai_detection' => [
+        'url' => env('AI_DETECTION_URL'),
+        'token' => env('AI_DETECTION_TOKEN'),
+        'timeout' => env('AI_DETECTION_TIMEOUT', 60),
     ],
 
     'postmark' => [

@@ -164,6 +164,25 @@ class DashboardController extends Controller
         return view('dashboard.show', compact('incident'));
     }
 
+    public function notifyEmergencyContact(Request $request, Incident $incident): RedirectResponse
+    {
+        $phone = $incident->emergencyContactPhone();
+
+        if (! $phone) {
+            return back()->with('error', 'No contact number on file for this incident.');
+        }
+
+        if ($incident->hasSentContactSms()) {
+            return back()->with('status', 'The emergency contact was already notified for this incident.');
+        }
+
+        $sent = $this->incidents->resendContactNotification($incident);
+
+        return $sent
+            ? back()->with('status', 'SMS sent to the emergency contact ('.$phone.').')
+            : back()->with('error', 'SMS delivery to the emergency contact failed.');
+    }
+
     public function verify(Request $request, Incident $incident): RedirectResponse
     {
         $data = $request->validate([

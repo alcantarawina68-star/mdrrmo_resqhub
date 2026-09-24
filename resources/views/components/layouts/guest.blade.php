@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub</title>
-    <meta name="description" content="ResQHub — live incident map and advisories from the MDRRMO of Camalaniugan, Cagayan.">
+    <meta name="description" content="ResQHub — live incident map and advisories from {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -19,7 +19,7 @@
                 <span class="flex h-11 w-11 items-center justify-center bg-primary text-base font-bold text-white">RQ</span>
                 <span>
                     <span class="block text-xl font-semibold text-fg">ResQHub</span>
-                    <span class="block text-xs text-muted">MDRRMO Camalaniugan</span>
+                    <span class="block text-xs text-muted">{{ site_setting('agency_short_name') }}</span>
                 </span>
             </a>
             <button type="button" class="btn btn-tertiary !px-2" aria-label="Toggle dark mode"

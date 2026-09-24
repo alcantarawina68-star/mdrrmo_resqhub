@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
         </div>
 
-        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5">
+        <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data" @submit="submitting = true">
             @csrf
 
             <div class="lg:col-span-3">
@@ -53,6 +53,14 @@
                             </select>
                         </div>
 
+                        @if ($canAssignUnit)
+                            <div class="field">
+                                <label class="label" for="assigned_unit">Assigned unit <span class="normal-case">(optional)</span></label>
+                                <input id="assigned_unit" type="text" name="assigned_unit" class="input" value="{{ old('assigned_unit') }}" placeholder="Rescue 117">
+                                <p class="mt-1 text-xs text-muted">This report will be verified immediately.</p>
+                            </div>
+                        @endif
+
                         <div class="field">
                             <label class="label" for="location_label">Nearest barangay or landmark</label>
                             <select id="location_label" name="location_label" class="select">
@@ -69,8 +77,22 @@
                         </div>
 
                         <div class="field">
+                            <label class="label" for="evidence">Image evidence <span class="normal-case">(optional)</span></label>
+                            <input id="evidence" type="file" name="evidence" accept="image/jpeg,image/png" class="input">
+                            <p class="mt-1 text-xs text-muted">A photo will be checked automatically to confirm it is not AI-generated. JPG or PNG, up to 5 MB.</p>
+                            @error('evidence') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="field">
                             <label class="label" for="contact_number">Contact number <span class="normal-case">(optional)</span></label>
                             <input id="contact_number" type="tel" name="contact_number" class="input" value="{{ old('contact_number', auth()->user()->contact_number) }}" placeholder="0917 123 4567">
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="emergency_contact">Emergency contact <span class="normal-case">(optional)</span></label>
+                            <input id="emergency_contact" type="tel" name="emergency_contact" class="input" value="{{ old('emergency_contact') }}" placeholder="0917 123 4567">
+                            <p class="mt-1 text-xs text-muted">This number receives SMS status updates for this report.</p>
+                            @error('emergency_contact') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
                         </div>
 
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
@@ -78,7 +100,10 @@
                             Report anonymously
                         </label>
 
-                        <button type="submit" class="btn btn-primary w-full">Submit Report</button>
+                        <button type="submit" class="btn btn-primary w-full" :disabled="submitting">
+                            <span x-show="!submitting">Submit Report</span>
+                            <span x-show="submitting">Analyzing image...</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -93,6 +118,7 @@
                 map: null,
                 marker: null,
                 locating: false,
+                submitting: false,
                 geoError: '',
                 init() {
                     const el = document.getElementById('report-map');
