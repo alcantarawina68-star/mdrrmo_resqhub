@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\SmsMessage;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Semaphore\SemaphoreClient;
 
 class SmsService
 {
@@ -16,6 +16,8 @@ class SmsService
     public const STATUS_FAILED = 'failed';
 
     public const MAX_ATTEMPTS = 2;
+
+    public function __construct(private readonly SemaphoreClient $semaphore) {}
 
     /**
      * Deliver an SMS message, logging each attempt. Retries once on failure,
@@ -76,24 +78,12 @@ class SmsService
 
     private function deliverViaSemaphore(string $phone, string $message): void
     {
-        $config = config('services.sms.semaphore', []);
+        $body = $this->semaphore->send($phone, $message);
 
-        $payload = [
-            'apikey' => (string) ($config['key'] ?? ''),
-            'number' => $phone,
-            'message' => $message,
-        ];
+        $payload = json_decode((string) $body, true);
 
-        if (! blank($config['sender'] ?? null)) {
-            $payload['sendername'] = $config['sender'];
-        }
-
-        $response = Http::timeout((int) ($config['timeout'] ?? 15))
-            ->asForm()
-            ->post((string) ($config['url'] ?? 'https://api.semaphore.co/api/v4/messages'), $payload);
-
-        if ($response->failed()) {
-            throw new RuntimeException("Semaphore SMS failed (HTTP {$response->status()}): {$response->body()}");
+        if (is_array($payload) && isset($payload['error'])) {
+            throw new RuntimeException('Semaphore SMS failed: '.$payload['error']);
         }
     }
 }

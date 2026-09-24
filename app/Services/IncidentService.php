@@ -53,7 +53,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyEmergencyContact($incident, $this->receivedMessage($incident));
+        $this->notifyEmergencyContact($incident, $autoVerified ? 'Your report was received and is now verified.' : 'Your report was received.');
 
         return $incident;
     }
@@ -86,7 +86,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyEmergencyContact($incident, $this->receivedMessage($incident));
+        $this->notifyEmergencyContact($incident, $autoVerified ? 'Your report was received and is now verified.' : 'Your report was received.');
 
         return $incident;
     }
@@ -119,7 +119,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyEmergencyContact($incident, $this->statusMessage($incident));
+        $this->notifyEmergencyContact($incident, $approved ? 'Your report has been verified.' : 'Your report was not approved.');
 
         return $incident;
     }
@@ -144,7 +144,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyEmergencyContact($incident, $this->statusMessage($incident));
+        $this->notifyEmergencyContact($incident, 'Status is now '.$incident->status->label().'.');
 
         return $incident;
     }
@@ -182,7 +182,7 @@ class IncidentService
             return $incident;
         });
 
-        $this->notifyEmergencyContact($incident, "ResQHub: Your incident {$incident->incident_number} has been assigned to {$incident->assigned_unit}.");
+        $this->notifyEmergencyContact($incident, 'The incident was assigned to '.$incident->assigned_unit.'.');
 
         return $incident;
     }
@@ -259,7 +259,7 @@ class IncidentService
         ]);
     }
 
-    private function notifyEmergencyContact(Incident $incident, string $message): void
+    private function notifyEmergencyContact(Incident $incident, string $event): void
     {
         $phone = $incident->emergency_contact
             ?? $incident->caller_contact
@@ -269,16 +269,38 @@ class IncidentService
             return;
         }
 
-        SendSms::dispatch($phone, $message);
+        SendSms::dispatch($phone, $this->contactMessage($incident, $event, filled($incident->emergency_contact)), $incident->id);
     }
 
-    private function receivedMessage(Incident $incident): string
+    private function contactMessage(Incident $incident, string $event, bool $isEmergencyContact): string
     {
-        return 'ResQHub: Your report was received ('.$incident->incident_number.'). Track it at '.site_setting('website', 'resqhub.ph').'/my-reports.';
+        $person = $this->personName($incident);
+        $type = $incident->incident_type->label();
+        $number = $incident->incident_number;
+
+        if ($isEmergencyContact) {
+            $intro = $person
+                ? "{$person} listed this number as their emergency contact for a {$type} incident ({$number})."
+                : "This number was registered as the emergency contact for a {$type} incident ({$number}).";
+        } else {
+            $intro = $person
+                ? "{$person} is involved in a {$type} incident ({$number})."
+                : "This number is listed for a {$type} incident ({$number}).";
+        }
+
+        return 'ResQHub: '.$intro.' '.$event.' Track updates here: '.site_setting('website', 'resqhub.ph').'/my-reports.';
     }
 
-    private function statusMessage(Incident $incident): string
+    private function personName(Incident $incident): ?string
     {
-        return 'ResQHub: Your incident '.$incident->incident_number.' is now '.$incident->status->label().'.';
+        if ($incident->source === IncidentSource::CallerBased) {
+            return $incident->caller_name;
+        }
+
+        if ($incident->reporter?->role?->value === UserRole::CommunityUser->value) {
+            return $incident->reporter->name;
+        }
+
+        return null;
     }
 }
