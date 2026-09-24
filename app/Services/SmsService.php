@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Incident;
 use App\Models\SmsMessage;
+use App\Models\StatusLog;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Semaphore\SemaphoreClient;
@@ -63,6 +65,29 @@ class SmsService
         Log::error("SMS delivery failed permanently for {$phone}.");
 
         return false;
+    }
+
+    /**
+     * Send an SMS and, on success, record it in the incident's status history.
+     */
+    public function sendForIncident(string $phone, string $message, Incident $incident): bool
+    {
+        if (! $this->send($phone, $message)) {
+            return false;
+        }
+
+        $status = $incident->status->value;
+
+        StatusLog::create([
+            'incident_id' => $incident->id,
+            'user_id' => $incident->user_id,
+            'old_status' => $status,
+            'new_status' => $status,
+            'note' => 'SMS sent to '.$phone.': '.$message,
+            'created_at' => now(),
+        ]);
+
+        return true;
     }
 
     private function deliver(string $phone, string $message): void

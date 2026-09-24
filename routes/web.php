@@ -48,6 +48,7 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
 
     Route::middleware('role:superadmin,admin,encoder')->group(function () {
         Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->middleware('reauthenticate')->name('dashboard.incidents.verify');
+        Route::post('/incidents/{incident}/notify', [DashboardController::class, 'notifyEmergencyContact'])->middleware('reauthenticate')->name('dashboard.incidents.notify');
         Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
         Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
 

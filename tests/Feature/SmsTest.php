@@ -5,6 +5,7 @@ use App\Enums\Priority;
 use App\Jobs\SendSms;
 use App\Models\Incident;
 use App\Models\SmsMessage;
+use App\Models\StatusLog;
 use App\Models\User;
 use App\Services\SmsService;
 use Illuminate\Support\Facades\Queue;
@@ -240,4 +241,81 @@ test('a failed SMS is not recorded in the incident status history', function () 
         ->handle(app(SmsService::class));
 
     expect($incident->statusLogs()->count())->toBe(0);
+});
+
+test('clicking notify emergency contact sends the SMS immediately', function () {
+    withSemaphoreDriver();
+    $this->mock(SemaphoreClient::class)
+        ->shouldReceive('send')
+        ->with('09179998888', Mockery::type('string'))
+        ->andReturn(json_encode([['message_id' => 1, 'status' => 'Queued']]));
+
+    $encoder = User::factory()->encoder()->create();
+    $incident = Incident::factory()->create(['user_id' => $encoder->id, 'emergency_contact' => '09179998888']);
+
+    $this->actingAs($encoder)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('dashboard.incidents.notify', $incident))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'SMS sent to the emergency contact (09179998888).');
+
+    expect($incident->statusLogs()->first()->note)->toContain('SMS sent to 09179998888');
+});
+
+test('a failed manual notification reports an error to the dispatcher', function () {
+    withSemaphoreDriver();
+    $this->mock(SemaphoreClient::class)
+        ->shouldReceive('send')
+        ->andReturn(json_encode(['error' => 'Invalid sender name.']));
+
+    $encoder = User::factory()->encoder()->create();
+    $incident = Incident::factory()->create(['user_id' => $encoder->id, 'emergency_contact' => '09179998888']);
+
+    $this->actingAs($encoder)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('dashboard.incidents.notify', $incident))
+        ->assertRedirect()
+        ->assertSessionHas('error', 'SMS delivery to the emergency contact failed.');
+
+    expect($incident->statusLogs()->count())->toBe(0);
+});
+
+test('the contact is not notified again once an SMS was already sent', function () {
+    Queue::fake([SendSms::class]);
+
+    $encoder = User::factory()->encoder()->create();
+    $incident = Incident::factory()->create(['user_id' => $encoder->id, 'emergency_contact' => '09179998888']);
+
+    StatusLog::create([
+        'incident_id' => $incident->id,
+        'user_id' => $encoder->id,
+        'old_status' => $incident->status->value,
+        'new_status' => $incident->status->value,
+        'note' => 'SMS sent to 09179998888: ResQHub: Test message.',
+        'created_at' => now(),
+    ]);
+
+    $this->actingAs($encoder)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('dashboard.incidents.notify', $incident))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'The emergency contact was already notified for this incident.');
+
+    Queue::assertNothingPushed();
+});
+
+test('an incident without any contact cannot be notified', function () {
+    Queue::fake([SendSms::class]);
+
+    $encoder = User::factory()->encoder()->create();
+    $reporter = User::factory()->create(['contact_number' => null]);
+    $incident = Incident::factory()->create(['user_id' => $reporter->id, 'emergency_contact' => null]);
+
+    $this->actingAs($encoder)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('dashboard.incidents.notify', $incident))
+        ->assertRedirect()
+        ->assertSessionHas('error', 'No contact number on file for this incident.');
+
+    Queue::assertNothingPushed();
 });

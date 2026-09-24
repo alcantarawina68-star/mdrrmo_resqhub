@@ -139,6 +139,17 @@
                 </div>
             @endif
 
+            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder) && $incident->emergencyContactPhone() && ! $incident->hasSentContactSms())
+                <div class="border border-border bg-surface p-5">
+                    <p class="panel-title mb-3">Emergency contact</p>
+                    <p class="text-sm text-muted">No SMS has reached the contact on file (<span class="mono">{{ $incident->emergencyContactPhone() }}</span>) yet.</p>
+                    <form method="POST" action="{{ route('dashboard.incidents.notify', $incident) }}" class="mt-3">
+                        @csrf
+                        <button type="submit" class="btn btn-primary">Notify emergency contact</button>
+                    </form>
+                </div>
+            @endif
+
             @if ($incident->status !== \App\Enums\IncidentStatus::Rejected && auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
                 <div class="border border-border bg-surface p-5">
                     <p class="panel-title mb-3">Update status</p>

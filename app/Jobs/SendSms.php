@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Incident;
-use App\Models\StatusLog;
 use App\Services\SmsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -22,25 +21,20 @@ class SendSms implements ShouldQueue
 
     public function handle(SmsService $sms): void
     {
-        if (! $sms->send($this->phone, $this->message)) {
+        if ($this->incidentId === null) {
+            $sms->send($this->phone, $this->message);
+
             return;
         }
 
-        $incident = $this->incidentId === null ? null : Incident::find($this->incidentId);
+        $incident = Incident::find($this->incidentId);
 
         if ($incident === null) {
+            $sms->send($this->phone, $this->message);
+
             return;
         }
 
-        $status = $incident->status->value;
-
-        StatusLog::create([
-            'incident_id' => $incident->id,
-            'user_id' => $incident->user_id,
-            'old_status' => $status,
-            'new_status' => $status,
-            'note' => 'SMS sent to '.$this->phone.': '.$this->message,
-            'created_at' => now(),
-        ]);
+        $sms->sendForIncident($this->phone, $this->message, $incident);
     }
 }

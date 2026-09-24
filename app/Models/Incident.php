@@ -77,6 +77,32 @@ class Incident extends Model
     }
 
     /**
+     * The phone number to reach for this incident: the emergency contact,
+     * otherwise the caller/reporter contact.
+     */
+    public function emergencyContactPhone(): ?string
+    {
+        return $this->emergency_contact
+            ?? $this->caller_contact
+            ?? $this->reporter?->contact_number;
+    }
+
+    /**
+     * Whether a successful SMS has already been recorded for this incident's contact.
+     */
+    public function hasSentContactSms(): bool
+    {
+        $phone = $this->emergencyContactPhone();
+
+        if (! $phone) {
+            return false;
+        }
+
+        return $this->statusLogs
+            ->contains(fn (StatusLog $log) => str_starts_with((string) $log->note, 'SMS sent to '.$phone));
+    }
+
+    /**
      * Incidents visible on the public map.
      */
     public function scopePubliclyVisible(Builder $query): Builder

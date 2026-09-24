@@ -19,7 +19,10 @@ use Throwable;
 
 class IncidentService
 {
-    public function __construct(private readonly AiImageDetectionService $aiDetection) {}
+    public function __construct(
+        private readonly AiImageDetectionService $aiDetection,
+        private readonly SmsService $sms,
+    ) {}
 
     public function createOnline(User $reporter, array $data): Incident
     {
@@ -261,15 +264,28 @@ class IncidentService
 
     private function notifyEmergencyContact(Incident $incident, string $event): void
     {
-        $phone = $incident->emergency_contact
-            ?? $incident->caller_contact
-            ?? $incident->reporter?->contact_number;
+        $phone = $incident->emergencyContactPhone();
 
         if (! $phone) {
             return;
         }
 
         SendSms::dispatch($phone, $this->contactMessage($incident, $event, filled($incident->emergency_contact)), $incident->id);
+    }
+
+    /**
+     * Send the emergency-contact SMS right now (no queue) and record the delivery
+     * in the incident's status history.
+     */
+    public function resendContactNotification(Incident $incident): bool
+    {
+        $phone = $incident->emergencyContactPhone();
+
+        if (! $phone || $incident->hasSentContactSms()) {
+            return false;
+        }
+
+        return $this->sms->sendForIncident($phone, $this->contactMessage($incident, 'You are the designated contact and will receive updates about this incident.', filled($incident->emergency_contact)), $incident);
     }
 
     private function contactMessage(Incident $incident, string $event, bool $isEmergencyContact): string
