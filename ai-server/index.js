@@ -1,6 +1,9 @@
-import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
 import express from 'express';
 import multer from 'multer';
+
+dotenv.config({ path: fileURLToPath(new URL('./.env', import.meta.url)) });
 
 const PORT = Number(process.env.PORT || 8001);
 const HF_URL = process.env.HF_API_URL || 'https://router.huggingface.co/hf-inference/models/dima806/ai_vs_human_generated_image_detection';
