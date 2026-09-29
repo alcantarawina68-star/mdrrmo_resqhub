@@ -26,32 +26,17 @@
 
             <div class="field">
                 <label class="label" for="incident_type">Incident type</label>
-                <select id="incident_type" name="incident_type" class="select" required>
-                    <option value="">Select type</option>
-                    @foreach (\App\Enums\IncidentType::labels() as $value => $label)
-                        <option value="{{ $value }}" @selected(old('incident_type') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-incident-type-select name="incident_type" id="incident_type" />
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div class="field">
-                    <label class="label" for="priority">Priority</label>
-                    <select id="priority" name="priority" class="select" required>
-                        @foreach (\App\Enums\Priority::labels() as $value => $label)
-                            <option value="{{ $value }}" @selected(old('priority', 'medium') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="field">
-                    <label class="label" for="location_label">Barangay</label>
-                    <select id="location_label" name="location_label" class="select">
-                        <option value="">Select barangay</option>
-                        @foreach (\App\Support\CamalBarangays::all() as $barangay)
-                            <option value="{{ $barangay }}" @selected(old('location_label') === $barangay)>{{ $barangay }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <div class="field">
+                <label class="label" for="location_label">Barangay</label>
+                <select id="location_label" name="location_label" class="select">
+                    <option value="">Select barangay</option>
+                    @foreach (\App\Support\CamalBarangays::all() as $barangay)
+                        <option value="{{ $barangay }}" @selected(old('location_label') === $barangay)>{{ $barangay }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="field">

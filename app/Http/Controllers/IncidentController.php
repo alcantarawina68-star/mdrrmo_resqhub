@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Http\Requests\StoreIncidentRequest;
 use App\Services\IncidentService;
@@ -19,8 +17,6 @@ class IncidentController extends Controller
     public function create(): View
     {
         return view('report.create', [
-            'types' => IncidentType::labels(),
-            'priorities' => Priority::labels(),
             'barangays' => CamalBarangays::all(),
             'canAssignUnit' => auth()->user()->hasRole(...UserRole::operationsRoles()),
         ]);

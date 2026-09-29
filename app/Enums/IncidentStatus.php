@@ -4,22 +4,18 @@ namespace App\Enums;
 
 enum IncidentStatus: string
 {
-    case New = 'new';
     case UnderVerification = 'under_verification';
     case Verified = 'verified';
     case Ongoing = 'ongoing';
-    case Resolved = 'resolved';
     case Closed = 'closed';
     case Rejected = 'rejected';
 
     public function label(): string
     {
         return match ($this) {
-            self::New => 'New',
             self::UnderVerification => 'Under Verification',
             self::Verified => 'Verified',
             self::Ongoing => 'Ongoing',
-            self::Resolved => 'Resolved',
             self::Closed => 'Closed',
             self::Rejected => 'Rejected',
         };
@@ -32,7 +28,7 @@ enum IncidentStatus: string
      */
     public static function publiclyVisible(): array
     {
-        return [self::Verified, self::Ongoing, self::Resolved];
+        return [self::Verified, self::Ongoing, self::Closed];
     }
 
     /**

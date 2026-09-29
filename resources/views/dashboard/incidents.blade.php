@@ -12,21 +12,11 @@
             </div>
             <div class="field">
                 <label class="label" for="type">Type</label>
-                <select id="type" name="type" class="select">
-                    <option value="">All types</option>
-                    @foreach ($types as $value => $label)
-                        <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-incident-type-select name="type" id="type" :required="false" placeholder="All types" :value="request('type')" />
             </div>
             <div class="field">
-                <label class="label" for="priority">Priority</label>
-                <select id="priority" name="priority" class="select">
-                    <option value="">All priorities</option>
-                    @foreach ($priorities as $value => $label)
-                        <option value="{{ $value }}" @selected(request('priority') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <label class="label" for="priority">Classification</label>
+                <x-classification-select name="priority" id="priority" :required="false" placeholder="All classifications" :value="request('priority')" />
             </div>
             <div class="field col-span-2 lg:col-span-1">
                 <label class="label" for="search">Search</label>
@@ -48,7 +38,7 @@
                 <tr class="bg-bg dark:bg-surface">
                     <th class="table-head">Incident</th>
                     <th class="table-head hidden md:table-cell">Barangay</th>
-                    <th class="table-head hidden lg:table-cell">Priority</th>
+                    <th class="table-head hidden lg:table-cell">Classification</th>
                     <th class="table-head">Status</th>
                     <th class="table-head hidden lg:table-cell">Reported</th>
                     <th class="table-head"></th>
@@ -62,7 +52,7 @@
                             <p class="mono text-xs text-muted">{{ $incident->incident_number }}</p>
                         </td>
                         <td class="table-cell hidden md:table-cell">{{ $incident->location_label ?? '—' }}</td>
-                        <td class="table-cell hidden lg:table-cell"><x-priority-badge :priority="$incident->priority" /></td>
+                        <td class="table-cell hidden lg:table-cell"><x-classification-badge :classification="$incident->priority" /></td>
                         <td class="table-cell"><x-status-chip :status="$incident->status" /></td>
                         <td class="table-cell hidden lg:table-cell"><span class="mono text-xs text-muted">{{ $incident->reported_at?->format('M j, g:i A') }}</span></td>
                         <td class="table-cell text-right">

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use Database\Factories\IncidentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,7 +49,7 @@ class Incident extends Model
             'source' => IncidentSource::class,
             'is_anonymous' => 'boolean',
             'status' => IncidentStatus::class,
-            'priority' => Priority::class,
+            'priority' => IncidentClassification::class,
             'reported_at' => 'datetime',
             'verified_at' => 'datetime',
             'resolved_at' => 'datetime',

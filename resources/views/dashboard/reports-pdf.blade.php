@@ -42,7 +42,7 @@
                 <tr>
                     <th>Incident No.</th>
                     <th>Type</th>
-                    <th>Priority</th>
+                    <th>Classification</th>
                     <th>Status</th>
                     <th>Location</th>
                     <th>Source</th>

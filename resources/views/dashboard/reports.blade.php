@@ -22,9 +22,9 @@
 
     <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <div class="card p-3 sm:p-5"><p class="panel-title">Total</p><p class="mono mt-2 text-2xl font-semibold text-fg sm:text-3xl">{{ $summary['total'] }}</p></div>
-        <div class="card p-3 sm:p-5"><p class="panel-title">Pending</p><p class="mono mt-2 text-2xl font-semibold text-warning sm:text-3xl">{{ $summary['pending'] }}</p></div>
+        <div class="card p-3 sm:p-5"><p class="panel-title">Under verification</p><p class="mono mt-2 text-2xl font-semibold text-warning sm:text-3xl">{{ $summary['under_verification'] }}</p></div>
         <div class="card p-3 sm:p-5"><p class="panel-title">Ongoing</p><p class="mono mt-2 text-2xl font-semibold text-secondary sm:text-3xl">{{ $summary['active'] }}</p></div>
-        <div class="card p-3 sm:p-5"><p class="panel-title">Resolved</p><p class="mono mt-2 text-2xl font-semibold text-success sm:text-3xl">{{ $summary['resolved'] }}</p></div>
+        <div class="card p-3 sm:p-5"><p class="panel-title">Closed</p><p class="mono mt-2 text-2xl font-semibold text-success sm:text-3xl">{{ $summary['closed'] }}</p></div>
         <div class="card p-3 sm:p-5">
             <p class="panel-title">Avg verify</p>
             <p class="mono mt-2 text-xl font-semibold text-fg sm:text-2xl">{{ $summary['average_response_minutes'] ?? '—' }}<span class="text-xs font-normal text-muted"> min</span></p>
@@ -69,18 +69,25 @@
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         <div class="border border-border bg-surface p-5">
             <p class="panel-title mb-4">By type</p>
-            <div class="divide-y divide-border">
-                @foreach ($summary['by_type'] as $row)
-                    <div class="flex items-center justify-between py-2 text-sm">
-                        <span>{{ $row['label'] }}</span>
-                        <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
+            <div class="space-y-4">
+                @foreach ($summary['by_type'] as $group)
+                    <div>
+                        <p class="label mb-1">{{ $group['label'] }}</p>
+                        <div class="divide-y divide-border">
+                            @foreach ($group['types'] as $row)
+                                <div class="flex items-center justify-between py-2 text-sm">
+                                    <span>{{ $row['label'] }}</span>
+                                    <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 @endforeach
             </div>
         </div>
 
         <div class="border border-border bg-surface p-5">
-            <p class="panel-title mb-4">By source & priority</p>
+            <p class="panel-title mb-4">By source &amp; classification</p>
             <div class="grid gap-6 sm:grid-cols-2">
                 <div>
                     <p class="label mb-2">Source</p>
@@ -94,9 +101,9 @@
                     </div>
                 </div>
                 <div>
-                    <p class="label mb-2">Priority</p>
+                    <p class="label mb-2">Classification</p>
                     <div class="divide-y divide-border">
-                        @foreach ($summary['by_priority'] as $row)
+                        @foreach ($summary['by_classification'] as $row)
                             <div class="flex items-center justify-between py-1.5 text-sm">
                                 <span>{{ $row['label'] }}</span>
                                 <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>

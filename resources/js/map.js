@@ -20,8 +20,10 @@ export function createIncidentMap(element, options = {}) {
         const classes = ['incident-marker'];
         classes.push(`is-${incident.status}`);
 
-        if (incident.priority === 'urgent') {
-            classes.push('is-urgent');
+        const classification = incident.classification ?? incident.priority;
+
+        if (classification === 'red') {
+            classes.push('is-red');
         }
 
         return classes.join(' ');

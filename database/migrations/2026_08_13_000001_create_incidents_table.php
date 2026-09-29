@@ -1,9 +1,9 @@
 <?php
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +18,7 @@ return new class extends Migration
         Schema::create('incidents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
-            $table->enum('incident_type', IncidentType::values());
+            $table->enum('incident_type', IncidentType::allValues());
             $table->text('description');
             $table->decimal('latitude', 10, 7);
             $table->decimal('longitude', 10, 7);
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('caller_contact', 20)->nullable();
             $table->boolean('is_anonymous')->default(false);
             $table->enum('status', IncidentStatus::values())->default(IncidentStatus::UnderVerification->value);
-            $table->enum('priority', Priority::values())->default(Priority::Medium->value);
+            $table->enum('priority', IncidentClassification::values())->default(IncidentClassification::Yellow->value);
             $table->string('assigned_unit', 120)->nullable();
             $table->timestamp('reported_at')->useCurrent();
             $table->timestamp('verified_at')->nullable();

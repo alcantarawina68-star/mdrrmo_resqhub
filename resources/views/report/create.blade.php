@@ -36,21 +36,12 @@
                     <div class="space-y-4">
                         <div class="field">
                             <label class="label" for="incident_type">Incident type</label>
-                            <select id="incident_type" name="incident_type" class="select" required>
-                                <option value="">Select type</option>
-                                @foreach ($types as $value => $label)
-                                    <option value="{{ $value }}" @selected(old('incident_type') === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <x-incident-type-select name="incident_type" id="incident_type" />
                         </div>
 
                         <div class="field">
-                            <label class="label" for="priority">Priority</label>
-                            <select id="priority" name="priority" class="select" required>
-                                @foreach ($priorities as $value => $label)
-                                    <option value="{{ $value }}" @selected(old('priority', 'medium') === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <label class="label" for="priority">Incident classification</label>
+                            <x-classification-select name="priority" id="priority" />
                         </div>
 
                         @if ($canAssignUnit)

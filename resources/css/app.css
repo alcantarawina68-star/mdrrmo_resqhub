@@ -142,14 +142,12 @@
     }
 
     .chip-verified,
-    .chip-resolved,
     .chip-active {
         @apply border-success/25 bg-success/10 text-success;
     }
 
     .chip-ongoing,
-    .chip-under_verification,
-    .chip-new {
+    .chip-under_verification {
         @apply border-warning/40 bg-warning/15 text-[#7a5200];
     }
 
@@ -158,19 +156,28 @@
         @apply border-danger/25 bg-danger/10 text-danger;
     }
 
-    .chip-low,
     .chip-info {
         @apply border-secondary/25 bg-secondary/10 text-secondary;
     }
 
-    .chip-medium,
     .chip-caution {
         @apply border-warning/40 bg-warning/15 text-[#7a5200];
     }
 
-    .chip-high,
-    .chip-urgent {
+    .chip-red {
         @apply border-danger/25 bg-danger/10 text-danger;
+    }
+
+    .chip-green {
+        @apply border-success/25 bg-success/10 text-success;
+    }
+
+    .chip-yellow {
+        @apply border-warning/40 bg-warning/15 text-[#7a5200];
+    }
+
+    .chip-black {
+        @apply border-fg/25 bg-fg/10 text-fg;
     }
 
     .table-head {
@@ -267,13 +274,13 @@
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
-.incident-marker.is-resolved .shape {
+.incident-marker.is-closed .shape {
     background: var(--color-success);
     border-radius: 2px;
     opacity: 0.85;
 }
 
-.incident-marker.is-urgent {
+.incident-marker.is-red {
     border: 2px solid var(--color-danger);
     border-radius: 9999px;
     width: 30px;

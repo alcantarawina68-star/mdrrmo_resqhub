@@ -78,11 +78,11 @@ Emergency incidents reported by community users or by phone (caller-based).
 | caller_contact | VARCHAR(20) | Yes | `NULL` | Caller-based incidents |
 | is_anonymous | BOOLEAN | No | `0` | |
 | status | ENUM | No | `under_verification` | See [Incident Status enum](#incident-status) |
-| priority | ENUM | No | `medium` | See [Priority enum](#priority) |
+| priority | ENUM | No | `yellow` | Column name retained for backward compatibility; see [Incident Classification enum](#incident-classification) |
 | assigned_unit | VARCHAR(120) | Yes | `NULL` | Assigned responder/unit |
 | reported_at | TIMESTAMP | No | `CURRENT_TIMESTAMP` | |
 | verified_at | TIMESTAMP | Yes | `NULL` | |
-| resolved_at | TIMESTAMP | Yes | `NULL` | |
+| resolved_at | TIMESTAMP | Yes | `NULL` | Set only when the status becomes `closed` |
 | created_at | TIMESTAMP | Yes | | |
 | updated_at | TIMESTAMP | Yes | | |
 
@@ -283,28 +283,35 @@ Laravel Sanctum API tokens.
 | `suspended` | Suspended |
 
 ### Incident Type
-| Value | Label |
-| --- | --- |
-| `typhoon_flood` | Typhoon / Flood |
-| `earthquake` | Earthquake |
-| `landslide` | Landslide |
-| `vehicular_accident` | Vehicular Accident |
-| `fire` | Fire |
-| `drowning` | Drowning |
-| `hazmat` | Hazardous Materials |
-| `ems` | Emergency Medical Services |
-| `patient_transport` | Patient Transport |
-| `other` | Other |
+Types are grouped by category in every selector. The `typhoon_flood` value is
+legacy: it is still stored and displayed for historical records, but it cannot
+be selected or submitted.
+
+| Value | Label | Category | Selectable |
+| --- | --- | --- | --- |
+| `typhoon` | Typhoon | Disaster Risk | Yes |
+| `flood` | Flood | Disaster Risk | Yes |
+| `earthquake` | Earthquake | Disaster Risk | Yes |
+| `landslide` | Landslide | Disaster Risk | Yes |
+| `vehicular_accident` | Vehicular Accident | Incidents | Yes |
+| `fire` | Fire | Incidents | Yes |
+| `drowning` | Drowning | Incidents | Yes |
+| `hazmat` | Hazardous Materials | Incidents | Yes |
+| `ems` | Emergency Medical Services | Incidents | Yes |
+| `patient_transport` | Patient Transport | Incidents | Yes |
+| `others` | Others | Others | Yes |
+| `typhoon_flood` | Typhoon / Flood | Disaster Risk | No (legacy) |
 
 ### Incident Status
+`new` and `resolved` were retired. `closed` is the terminal status and is the
+only status that populates `resolved_at`.
+
 | Value | Label | Public Map |
 | --- | --- | --- |
-| `new` | New | No |
 | `under_verification` | Under Verification | No |
 | `verified` | Verified | Yes |
 | `ongoing` | Ongoing | Yes |
-| `resolved` | Resolved | Yes |
-| `closed` | Closed | No |
+| `closed` | Closed | Yes |
 | `rejected` | Rejected | No |
 
 ### Incident Source
@@ -313,13 +320,17 @@ Laravel Sanctum API tokens.
 | `online` | Online |
 | `caller_based` | Caller-Based |
 
-### Priority
-| Value | Label |
-| --- | --- |
-| `low` | Low |
-| `medium` | Medium |
-| `high` | High |
-| `urgent` | Urgent |
+### Incident Classification
+Stored in the `incidents.priority` column. The column name is retained so the
+existing form field, filter key, and API key keep working; the API additionally
+exposes `classification` and `classification_label` as aliases.
+
+| Value | Label | Migrated From |
+| --- | --- | --- |
+| `red` | 🔴 Red | `high` |
+| `green` | 🟢 Green | `low` |
+| `yellow` | 🟡 Yellow | `medium` |
+| `black` | ⚫ Black | `urgent` |
 
 ### Announcement Category
 | Value | Label |

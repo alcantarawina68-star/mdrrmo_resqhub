@@ -24,7 +24,7 @@ erDiagram
     incidents {
         bigint id PK
         bigint user_id FK
-        enum incident_type "typhoon_flood|earthquake|landslide|vehicular_accident|fire|drowning|hazmat|ems|patient_transport|other"
+        enum incident_type "typhoon|flood|earthquake|landslide|vehicular_accident|fire|drowning|hazmat|ems|patient_transport|others|typhoon_flood (legacy)"
         text description
         decimal latitude "DECIMAL(10,7)"
         decimal longitude "DECIMAL(10,7)"
@@ -33,8 +33,8 @@ erDiagram
         varchar caller_name "VARCHAR(120)"
         varchar caller_contact "VARCHAR(20)"
         boolean is_anonymous
-        enum status "new|under_verification|verified|ongoing|resolved|closed|rejected"
-        enum priority "low|medium|high|urgent"
+        enum status "under_verification|verified|ongoing|closed|rejected"
+        enum priority "red|green|yellow|black (incident classification)"
         varchar assigned_unit "VARCHAR(120)"
         timestamp reported_at
         timestamp verified_at

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Http\Controllers\Controller;
@@ -147,6 +148,12 @@ class IncidentController extends Controller
 
         if ($request->filled('status') && in_array($request->input('status'), IncidentStatus::values(), true)) {
             $query->where('status', $request->input('status'));
+        }
+
+        $classification = $request->input('classification', $request->input('priority'));
+
+        if (filled($classification) && in_array($classification, IncidentClassification::values(), true)) {
+            $query->where('priority', $classification);
         }
 
         if ($request->filled('barangay')) {

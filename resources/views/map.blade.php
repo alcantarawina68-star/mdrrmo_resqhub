@@ -67,8 +67,12 @@
                     <label class="label" for="map-type">Incident type</label>
                     <select id="map-type" class="select" x-model="activeType" @change="render()">
                         <option value="">All types</option>
-                        <template x-for="(label, value) in types" :key="value">
-                            <option :value="value" x-text="label"></option>
+                        <template x-for="(group, category) in types" :key="category">
+                            <optgroup :label="group.label">
+                                <template x-for="(label, value) in group.types" :key="value">
+                                    <option :value="value" x-text="label"></option>
+                                </template>
+                            </optgroup>
                         </template>
                     </select>
                 </div>
@@ -100,10 +104,10 @@
                             <span class="inline-block h-0 w-0 border-x-4 border-x-transparent border-b-8 border-warning"></span><span>Ongoing</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="inline-block h-3 w-3 bg-success opacity-85"></span><span>Resolved</span>
+                            <span class="inline-block h-3 w-3 bg-success opacity-85"></span><span>Closed</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="inline-block h-3.5 w-3.5 rounded-full border-2 border-danger"></span><span>Urgent priority</span>
+                            <span class="inline-block h-3.5 w-3.5 rounded-full border-2 border-danger"></span><span>🔴 Red</span>
                         </div>
                     </div>
                 </div>
@@ -166,8 +170,12 @@
                             <label class="label" for="map-type-mobile">Incident type</label>
                             <select id="map-type-mobile" class="select" x-model="activeType" @change="render()">
                                 <option value="">All types</option>
-                                <template x-for="(label, value) in types" :key="value">
-                                    <option :value="value" x-text="label"></option>
+                                <template x-for="(group, category) in types" :key="category">
+                                    <optgroup :label="group.label">
+                                        <template x-for="(label, value) in group.types" :key="value">
+                                            <option :value="value" x-text="label"></option>
+                                        </template>
+                                    </optgroup>
                                 </template>
                             </select>
                         </div>
@@ -199,10 +207,10 @@
                                     <span class="inline-block h-0 w-0 border-x-4 border-x-transparent border-b-8 border-warning"></span><span>Ongoing</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="inline-block h-3 w-3 bg-success opacity-85"></span><span>Resolved</span>
+                                    <span class="inline-block h-3 w-3 bg-success opacity-85"></span><span>Closed</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="inline-block h-3.5 w-3.5 rounded-full border-2 border-danger"></span><span>Urgent priority</span>
+                                    <span class="inline-block h-3.5 w-3.5 rounded-full border-2 border-danger"></span><span>🔴 Red</span>
                                 </div>
                             </div>
                         </div>
@@ -240,7 +248,7 @@
                 incidents: @js($incidents),
                 types: @js($types),
                 statuses: @js($statuses),
-                activeStatuses: ['verified', 'ongoing', 'resolved'],
+                activeStatuses: ['verified', 'ongoing', 'closed'],
                 activeType: '',
                 search: '',
                 map: null,
@@ -286,7 +294,7 @@
                     marker?.openPopup();
                 },
                 clearFilters() {
-                    this.activeStatuses = ['verified', 'ongoing', 'resolved'];
+                    this.activeStatuses = ['verified', 'ongoing', 'closed'];
                     this.activeType = '';
                     this.search = '';
                     this.render();

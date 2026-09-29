@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Incident;
@@ -130,11 +130,11 @@ class DashboardController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        if ($request->filled('type')) {
+        if ($request->filled('type') && in_array($request->input('type'), IncidentType::values(), true)) {
             $query->where('incident_type', $request->input('type'));
         }
 
-        if ($request->filled('priority')) {
+        if ($request->filled('priority') && in_array($request->input('priority'), IncidentClassification::values(), true)) {
             $query->where('priority', $request->input('priority'));
         }
 
@@ -152,8 +152,6 @@ class DashboardController extends Controller
         return view('dashboard.incidents', [
             'incidents' => $incidents,
             'statuses' => IncidentStatus::labels(),
-            'types' => IncidentType::labels(),
-            'priorities' => Priority::labels(),
         ]);
     }
 
@@ -222,7 +220,7 @@ class DashboardController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'location_label' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'in:'.implode(',', Priority::values())],
+            'priority' => ['required', 'in:'.implode(',', IncidentClassification::values())],
         ]);
 
         $this->incidents->updateDetails($request->user(), $incident, $data);

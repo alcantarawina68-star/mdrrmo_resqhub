@@ -133,14 +133,17 @@ class IncidentService
             throw new RuntimeException('Use the verification flow to reject an incident.');
         }
 
-        $resolvedStates = [IncidentStatus::Resolved, IncidentStatus::Closed];
-
-        $incident = DB::transaction(function () use ($actor, $incident, $status, $note, $resolvedStates) {
-            $incident->update([
+        $incident = DB::transaction(function () use ($actor, $incident, $status, $note) {
+            $attributes = [
                 'status' => $status,
-                'verified_at' => $status !== IncidentStatus::New ? ($incident->verified_at ?? now()) : null,
-                'resolved_at' => in_array($status, $resolvedStates, true) ? now() : null,
-            ]);
+                'verified_at' => $incident->verified_at ?? now(),
+            ];
+
+            if ($status === IncidentStatus::Closed) {
+                $attributes['resolved_at'] = $incident->resolved_at ?? now();
+            }
+
+            $incident->update($attributes);
 
             $this->logStatus($incident, $actor, $status, $note);
 

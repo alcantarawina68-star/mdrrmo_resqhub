@@ -1,7 +1,7 @@
 <?php
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Jobs\SendSms;
 use App\Models\Incident;
 use App\Models\SmsMessage;
@@ -128,7 +128,7 @@ test('submitting an online report sends an SMS only to its emergency contact', f
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => Priority::High->value,
+            'priority' => IncidentClassification::Red->value,
             'emergency_contact' => '09179998888',
         ])
         ->assertRedirect(route('my-reports'));
@@ -148,12 +148,11 @@ test('a caller-based report without an emergency contact falls back to the calle
     $this->actingAs($encoder)
         ->withSession(['auth.password_confirmed_at' => time()])
         ->post(route('dashboard.caller.store'), [
-            'incident_type' => IncidentType::TyphoonFlood->value,
+            'incident_type' => IncidentType::Flood->value,
             'description' => 'Rising floodwater entered the houses along the riverbank quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
             'location_label' => 'Balogo',
-            'priority' => Priority::High->value,
             'caller_name' => 'Maria Santos',
             'caller_contact' => '09179876543',
         ])
@@ -162,7 +161,7 @@ test('a caller-based report without an emergency contact falls back to the calle
     Queue::assertPushed(SendSms::class, 1);
     Queue::assertPushed(SendSms::class, fn (SendSms $job) => $job->phone === '09179876543'
         && str_contains($job->message, 'Maria Santos')
-        && str_contains($job->message, 'involved in a Typhoon / Flood incident'));
+        && str_contains($job->message, 'involved in a Flood incident'));
 });
 
 test('an auto-verified online report sends a single combined received-and-verified SMS', function () {
@@ -176,7 +175,7 @@ test('an auto-verified online report sends a single combined received-and-verifi
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => Priority::High->value,
+            'priority' => IncidentClassification::Red->value,
             'emergency_contact' => '09179998888',
         ])
         ->assertRedirect(route('my-reports'));
@@ -199,7 +198,7 @@ test('no SMS is sent when the incident has no contact number', function () {
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => Priority::High->value,
+            'priority' => IncidentClassification::Red->value,
         ])
         ->assertRedirect(route('my-reports'));
 

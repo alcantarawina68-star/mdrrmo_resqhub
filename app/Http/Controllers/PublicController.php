@@ -31,13 +31,15 @@ class PublicController extends Controller
                 'status_label' => $incident->status->label(),
                 'priority' => $incident->priority->value,
                 'priority_label' => $incident->priority->label(),
+                'classification' => $incident->priority->value,
+                'classification_label' => $incident->priority->label(),
             ])
             ->values()
             ->all();
 
         return view('map', [
             'incidents' => $incidents,
-            'types' => IncidentType::labels(),
+            'types' => IncidentType::grouped(),
             'statuses' => IncidentStatus::labels(),
             'barangays' => CamalBarangays::all(),
         ]);

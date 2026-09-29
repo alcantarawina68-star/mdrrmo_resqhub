@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
@@ -42,17 +42,16 @@ class ReportService
 
         return [
             'total' => $base->clone()->count(),
-            'pending' => $byStatus->get(IncidentStatus::UnderVerification->value, 0),
+            'under_verification' => $byStatus->get(IncidentStatus::UnderVerification->value, 0),
             'active' => $byStatus->get(IncidentStatus::Ongoing->value, 0),
-            'resolved' => $byStatus->get(IncidentStatus::Resolved->value, 0),
+            'closed' => $byStatus->get(IncidentStatus::Closed->value, 0),
             'by_status' => $this->labelsWithCounts($byStatus, IncidentStatus::labels()),
-            'by_type' => $this->labelsWithCounts(
+            'by_type' => $this->groupedTypeCounts(
                 $base->clone()->selectRaw('incident_type, COUNT(*) as total')->groupBy('incident_type')->pluck('total', 'incident_type'),
-                IncidentType::labels(),
             ),
-            'by_priority' => $this->labelsWithCounts(
+            'by_classification' => $this->labelsWithCounts(
                 $base->clone()->selectRaw('priority, COUNT(*) as total')->groupBy('priority')->pluck('total', 'priority'),
-                Priority::labels(),
+                IncidentClassification::labels(),
             ),
             'by_source' => $this->labelsWithCounts(
                 $base->clone()->selectRaw('source, COUNT(*) as total')->groupBy('source')->pluck('total', 'source'),
@@ -128,7 +127,7 @@ class ReportService
         fwrite($handle, "\xEF\xBB\xBF");
 
         fputcsv($handle, [
-            'Incident No.', 'Type', 'Priority', 'Status', 'Location', 'Barangay', 'Source',
+            'Incident No.', 'Type', 'Classification', 'Status', 'Location', 'Barangay', 'Source',
             'Reporter', 'Reported At', 'Verified At', 'Resolved At',
         ]);
 
@@ -203,6 +202,43 @@ class ReportService
         }
 
         return $query->orderByDesc('reported_at')->get();
+    }
+
+    /**
+     * Incident type counts nested under their main category, in display order.
+     *
+     * Legacy types are included so historical incidents still contribute to
+     * their category total, even though they can no longer be selected.
+     *
+     * @param  Collection<int|string, mixed>  $counts
+     * @return array<int, array{label: string, types: array<int, array{value: string, label: string, total: int}>}>
+     */
+    private function groupedTypeCounts(Collection $counts): array
+    {
+        $grouped = [];
+
+        foreach (IncidentType::CATEGORIES as $category => $categoryLabel) {
+            $types = [];
+
+            foreach (IncidentType::cases() as $case) {
+                if ($case->category() !== $category) {
+                    continue;
+                }
+
+                $types[] = [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                    'total' => (int) ($counts->get($case->value) ?? 0),
+                ];
+            }
+
+            $grouped[] = [
+                'label' => $categoryLabel,
+                'types' => $types,
+            ];
+        }
+
+        return $grouped;
     }
 
     /**

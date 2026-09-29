@@ -5,7 +5,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="mono text-lg">{{ $incident->incident_number }}</h2>
                     <x-status-chip :status="$incident->status" />
-                    <x-priority-badge :priority="$incident->priority" />
+                    <x-classification-badge :classification="$incident->priority" />
                     <span class="mono ml-auto text-xs text-muted">reported {{ $incident->reported_at?->format('M j, Y g:i A') }}</span>
                 </div>
                 <h3 class="mt-3 text-xl font-semibold text-fg">{{ $incident->incident_type->label() }}</h3>
@@ -84,19 +84,11 @@
                         @csrf
                         <div class="field">
                             <label class="label" for="edit-type">Incident type</label>
-                            <select id="edit-type" name="incident_type" class="select">
-                                @foreach (\App\Enums\IncidentType::labels() as $value => $label)
-                                    <option value="{{ $value }}" @selected($incident->incident_type->value === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <x-incident-type-select name="incident_type" id="edit-type" :value="$incident->incident_type->value" />
                         </div>
                         <div class="field">
-                            <label class="label" for="edit-priority">Priority</label>
-                            <select id="edit-priority" name="priority" class="select">
-                                @foreach (\App\Enums\Priority::labels() as $value => $label)
-                                    <option value="{{ $value }}" @selected($incident->priority->value === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <label class="label" for="edit-priority">Incident classification</label>
+                            <x-classification-select name="priority" id="edit-priority" :value="$incident->priority->value" />
                         </div>
                         <div class="field sm:col-span-2">
                             <label class="label" for="edit-location">Barangay / landmark</label>
@@ -218,6 +210,7 @@
                         'status' => $incident->status->value,
                         'status_label' => $incident->status->label(),
                         'priority' => $incident->priority->value,
+                        'classification' => $incident->priority->value,
                     ]));
                     setTimeout(() => map.map.invalidateSize(), 100);
                 },

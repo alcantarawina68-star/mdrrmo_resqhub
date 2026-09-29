@@ -38,8 +38,8 @@ erDiagram
         varchar caller_name "VARCHAR(120)"
         varchar caller_contact "VARCHAR(20)"
         boolean is_anonymous
-        enum status "new|under_verification|verified|ongoing|resolved|closed|rejected"
-        enum priority "low|medium|high|urgent"
+        enum status "under_verification|verified|ongoing|closed|rejected"
+        enum priority "red|green|yellow|black (incident classification)"
         varchar assigned_unit "VARCHAR(120)"
         timestamp reported_at
         timestamp verified_at

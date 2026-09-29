@@ -119,16 +119,16 @@
                 <p class="mono mt-2 text-2xl font-semibold text-fg sm:text-3xl">{{ $today }}</p>
             </div>
             <div class="card p-5">
-                <p class="panel-title">Pending verification</p>
-                <p class="mono mt-2 text-2xl font-semibold text-warning sm:text-3xl">{{ $summary['pending'] }}</p>
+                <p class="panel-title">Under verification</p>
+                <p class="mono mt-2 text-2xl font-semibold text-warning sm:text-3xl">{{ $summary['under_verification'] }}</p>
             </div>
             <div class="card p-5">
                 <p class="panel-title">Ongoing</p>
                 <p class="mono mt-2 text-2xl font-semibold text-secondary sm:text-3xl">{{ $summary['active'] }}</p>
             </div>
             <div class="card p-5">
-                <p class="panel-title">Resolved</p>
-                <p class="mono mt-2 text-2xl font-semibold text-success sm:text-3xl">{{ $summary['resolved'] }}</p>
+                <p class="panel-title">Closed</p>
+                <p class="mono mt-2 text-2xl font-semibold text-success sm:text-3xl">{{ $summary['closed'] }}</p>
             </div>
         </div>
 
@@ -146,7 +146,7 @@
                             <tr class="bg-bg dark:bg-surface">
                                 <th class="table-head">Incident</th>
                                 <th class="table-head">Barangay</th>
-                                <th class="table-head hidden sm:table-cell">Priority</th>
+                                <th class="table-head hidden sm:table-cell">Classification</th>
                                 <th class="table-head">Status</th>
                             </tr>
                         </thead>
@@ -160,7 +160,7 @@
                                         <p class="mono text-xs text-muted">{{ $incident->incident_number }}</p>
                                     </td>
                                     <td class="table-cell">{{ $incident->location_label ?? '—' }}</td>
-                                    <td class="table-cell hidden sm:table-cell"><x-priority-badge :priority="$incident->priority" /></td>
+                                    <td class="table-cell hidden sm:table-cell"><x-classification-badge :classification="$incident->priority" /></td>
                                     <td class="table-cell"><x-status-chip :status="$incident->status" /></td>
                                 </tr>
                             @empty

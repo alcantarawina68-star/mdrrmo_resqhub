@@ -12,7 +12,7 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <h1 class="mono text-lg sm:text-xl">{{ $incident->incident_number }}</h1>
                         <x-status-chip :status="$incident->status" />
-                        <x-priority-badge :priority="$incident->priority" />
+                        <x-classification-badge :classification="$incident->priority" />
                     </div>
                     <h2 class="mt-2 text-xl font-semibold text-fg sm:text-2xl">{{ $incident->incident_type->label() }}</h2>
                 </div>
@@ -102,6 +102,7 @@
                 'longitude' => $incident->longitude,
                 'status' => $incident->status->value,
                 'priority' => $incident->priority->value,
+                'classification' => $incident->priority->value,
             ]);
 
             Alpine.data('detailMap', () => ({
