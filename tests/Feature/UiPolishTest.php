@@ -39,8 +39,11 @@ test('the users page uses the branded delete confirmation dialog', function () {
         ->assertSee('Delete user');
 });
 
-test('the live map incident card can be dismissed', function () {
-    get('/')->assertOk()->assertSee('Close details');
+test('the live map shows pin details in the marker popup only', function () {
+    get('/')
+        ->assertOk()
+        ->assertDontSee('Close details')
+        ->assertDontSee('x-show="selected"');
 });
 
 test('mobile navigation menus stay pinned to the sticky header when scrolling', function () {

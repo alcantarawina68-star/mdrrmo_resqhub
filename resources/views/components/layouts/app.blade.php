@@ -1,4 +1,7 @@
-@props(['title' => 'ResQHub'])
+@props([
+    'title' => 'ResQHub',
+    'footerSpacing' => true,
+])
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -169,7 +172,7 @@
         </template>
     </div>
 
-    <footer class="mt-16 border-t border-border bg-surface py-6 pb-24 lg:pb-6">
+    <footer @class(['border-t border-border bg-surface py-6 pb-24 lg:pb-6', 'mt-16' => $footerSpacing])>
         <div class="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 text-xs text-muted sm:px-6 md:flex-row md:items-center md:justify-between">
             <p>ResQHub · {{ site_setting('agency_name') }} · {{ site_setting('municipality') }}</p>
             <p class="mono">Emergency hotline: {{ site_setting('hotline') }} · {{ site_setting('website') }}

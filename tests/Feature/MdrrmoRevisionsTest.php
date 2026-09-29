@@ -131,6 +131,26 @@ test('closing an incident is the only transition that records a resolution time'
     expect($incident->refresh()->resolved_at)->not->toBeNull();
 });
 
+test('the public map feeds every classification to the marker colours', function (string $classification) {
+    Incident::factory()->verified()
+        ->classification(IncidentClassification::from($classification))
+        ->create();
+
+    // The map payload is emitted through `@js`, which hex-escapes quotes.
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('\u0022classification\u0022:\u0022'.$classification.'\u0022', false);
+})->with(IncidentClassification::values());
+
+test('the public map styles all four classification colours in the stylesheet', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)->toContain('.incident-marker.is-red .shape')
+        ->toContain('.incident-marker.is-green .shape')
+        ->toContain('.incident-marker.is-yellow .shape')
+        ->toContain('.incident-marker.is-black .shape');
+});
+
 test('the incident api exposes classification aliases alongside priority', function () {
     $admin = User::factory()->admin()->create();
     $incident = Incident::factory()->verified()->classification(IncidentClassification::Black)->create();

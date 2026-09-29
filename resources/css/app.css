@@ -280,11 +280,29 @@
     opacity: 0.85;
 }
 
-.incident-marker.is-red {
-    border: 2px solid var(--color-danger);
-    border-radius: 9999px;
-    width: 30px;
-    height: 30px;
+/*
+ * Classification is shown as a ring around the status shape, so the fill keeps
+ * meaning "status" while the ring carries the 🔴 Red / 🟢 Green / 🟡 Yellow /
+ * ⚫ Black classification.
+ */
+.incident-marker .shape {
+    box-shadow: 0 0 0 2px transparent;
+}
+
+.incident-marker.is-red .shape {
+    box-shadow: 0 0 0 2px var(--color-danger);
+}
+
+.incident-marker.is-green .shape {
+    box-shadow: 0 0 0 2px var(--color-success);
+}
+
+.incident-marker.is-yellow .shape {
+    box-shadow: 0 0 0 2px var(--color-warning);
+}
+
+.incident-marker.is-black .shape {
+    box-shadow: 0 0 0 2px var(--color-fg);
 }
 
 .incident-popup .leaflet-popup-content-wrapper {

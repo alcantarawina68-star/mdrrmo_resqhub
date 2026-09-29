@@ -1,5 +1,4 @@
 export function createIncidentMap(element, options = {}) {
-    const { onSelect } = options;
     const showDetailsLink = options.showDetailsLink ?? true;
 
     const map = L.map(element, {
@@ -16,14 +15,16 @@ export function createIncidentMap(element, options = {}) {
 
     const markers = L.layerGroup().addTo(map);
 
+    const CLASSIFICATIONS = ['red', 'green', 'yellow', 'black'];
+
     function markerClass(incident) {
         const classes = ['incident-marker'];
         classes.push(`is-${incident.status}`);
 
         const classification = incident.classification ?? incident.priority;
 
-        if (classification === 'red') {
-            classes.push('is-red');
+        if (CLASSIFICATIONS.includes(classification)) {
+            classes.push(`is-${classification}`);
         }
 
         return classes.join(' ');
@@ -55,7 +56,6 @@ export function createIncidentMap(element, options = {}) {
             keyboard: true,
         });
 
-        marker.on('click', () => onSelect?.(incident));
         marker.feature = incident;
 
         marker.bindPopup(() => {
@@ -77,6 +77,15 @@ export function createIncidentMap(element, options = {}) {
 
             meta.append(id, chip);
 
+            const classification = incident.classification ?? incident.priority;
+
+            if (CLASSIFICATIONS.includes(classification)) {
+                const classificationChip = document.createElement('span');
+                classificationChip.className = `chip chip-${classification} normal-case`;
+                classificationChip.textContent = incident.classification_label ?? classification;
+                meta.append(classificationChip);
+            }
+
             const title = document.createElement('div');
             title.style.fontWeight = '600';
             title.textContent = incident.incident_type_label ?? incident.incident_type;
@@ -85,6 +94,15 @@ export function createIncidentMap(element, options = {}) {
             const desc = document.createElement('div');
             desc.style.color = 'var(--color-muted)';
             desc.textContent = incident.location_label ?? `${incident.latitude.toFixed(5)}, ${incident.longitude.toFixed(5)}`;
+
+            if (incident.description) {
+                const summary = document.createElement('div');
+                summary.style.color = 'var(--color-fg)';
+                summary.style.marginTop = '4px';
+                summary.style.fontSize = '13px';
+                summary.textContent = incident.description;
+                el.append(summary);
+            }
 
             const actions = document.createElement('div');
             actions.style.marginTop = '8px';
