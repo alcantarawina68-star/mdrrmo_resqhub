@@ -1,5 +1,5 @@
 <x-layouts.app title="Submit a Report">
-    <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6" x-data="reportForm()">
+    <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6" x-data="reportForm()">
         <div class="mb-6">
             <h1>Submit a Report</h1>
             <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
@@ -16,7 +16,7 @@
                             Use my location
                         </button>
                     </div>
-                    <div id="report-map" class="h-64 border border-border bg-bg sm:h-96" role="application" aria-label="Map to pin incident location"></div>
+                    <div id="report-map" class="h-64 rounded-lg border border-border bg-bg sm:h-96" role="application" aria-label="Map to pin incident location"></div>
                     <p class="text-xs text-muted" x-show="lat && lng">
                         Selected coordinates:
                         <span class="mono" x-text="lat + ', ' + lng"></span>
@@ -30,7 +30,7 @@
             </div>
 
             <div class="lg:col-span-2">
-                <div class="border border-border bg-surface p-6">
+                <div class="card p-6 lg:sticky lg:top-20">
                     <h2 class="mb-4 text-base font-semibold text-fg">Incident details</h2>
 
                     <div class="space-y-4">

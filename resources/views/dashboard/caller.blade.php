@@ -1,6 +1,8 @@
 <x-layouts.dashboard title="Encode Caller Report">
+    <x-page-header description="Turn a phone call into an incident. Reports are verified automatically once saved." />
+
     <div class="grid gap-6 lg:grid-cols-2" x-data="callerForm()">
-        <form method="POST" action="{{ route('dashboard.caller.store') }}" class="flex flex-col gap-4 border border-border bg-surface p-6">
+        <form method="POST" action="{{ route('dashboard.caller.store') }}" class="card flex flex-col gap-4 p-6">
             @csrf
 
             <div class="flex items-center justify-between">
@@ -62,14 +64,14 @@
             <button type="submit" class="btn btn-primary w-full">Save Report</button>
         </form>
 
-        <div class="border border-border bg-surface p-4">
+        <div class="card sticky top-20 self-start p-4">
             <div class="mb-2 flex items-center justify-between">
                 <label class="label" for="caller-map">Tag location</label>
                 <button type="button" class="btn btn-tertiary !px-1 !text-xs" :disabled="locating" @click="useMyLocation()">
                     Use my location
                 </button>
             </div>
-            <div id="caller-map" class="h-72 w-full border border-border bg-bg lg:h-[28rem]" role="application" aria-label="Map to tag caller location"></div>
+            <div id="caller-map" class="h-72 w-full rounded-lg border border-border bg-bg lg:h-[calc(100dvh-14rem)]" role="application" aria-label="Map to tag caller location"></div>
             <p class="mt-1 text-xs text-muted" x-show="lat && lng">
                 <span class="mono" x-text="lat + ', ' + lng"></span>
             </p>

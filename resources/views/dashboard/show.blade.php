@@ -1,7 +1,9 @@
 <x-layouts.dashboard title="Incident {{ $incident->incident_number }}">
+    <a href="{{ route('dashboard.incidents') }}" class="btn btn-tertiary mb-4 !px-0">&larr; Back to incidents</a>
+
     <div class="grid gap-6 lg:grid-cols-5">
         <div class="space-y-6 lg:col-span-3">
-            <div class="border border-border bg-surface p-5">
+            <div class="card p-5">
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="mono text-lg">{{ $incident->incident_number }}</h2>
                     <x-status-chip :status="$incident->status" />
@@ -12,12 +14,12 @@
                 <p class="mt-2 whitespace-pre-line text-sm text-fg/90">{{ $incident->description }}</p>
             </div>
 
-            <div class="border border-border bg-surface">
+            <div class="card">
                 <div id="detail-map" class="h-64 bg-bg" role="application" aria-label="Incident location map"></div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Details</p>
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between gap-3"><dt class="text-muted">Barangay</dt><dd class="font-medium">{{ $incident->location_label ?? '—' }}</dd></div>
@@ -27,7 +29,7 @@
                     </dl>
                 </div>
 
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Reporter</p>
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between gap-3"><dt class="text-muted">Name</dt><dd class="font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? '—') }}</dd></div>
@@ -39,7 +41,7 @@
             </div>
 
             @if ($incident->evidence->isNotEmpty())
-                <div class="border border-border bg-surface">
+                <div class="card">
                     <div class="flex items-center justify-between border-b border-border px-5 py-4">
                         <p class="panel-title">Attached evidence</p>
                         <span class="mono text-xs text-muted">{{ $incident->evidence->count() }} item{{ $incident->evidence->count() === 1 ? '' : 's' }}</span>
@@ -78,7 +80,7 @@
             @endif
 
             @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Edit details</p>
                     <form method="POST" action="{{ route('dashboard.incidents.update', $incident) }}" class="grid gap-4 sm:grid-cols-2">
                         @csrf
@@ -108,7 +110,7 @@
 
         <div class="space-y-6 lg:col-span-2">
             @if ($incident->status === \App\Enums\IncidentStatus::UnderVerification && auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Verification</p>
                     <form method="POST" action="{{ route('dashboard.incidents.verify', $incident) }}" class="space-y-4">
                         @csrf
@@ -132,7 +134,7 @@
             @endif
 
             @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder) && $incident->emergencyContactPhone() && ! $incident->hasSentContactSms())
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Emergency contact</p>
                     <p class="text-sm text-muted">No SMS has reached the contact on file (<span class="mono">{{ $incident->emergencyContactPhone() }}</span>) yet.</p>
                     <form method="POST" action="{{ route('dashboard.incidents.notify', $incident) }}" class="mt-3">
@@ -143,7 +145,7 @@
             @endif
 
             @if ($incident->status !== \App\Enums\IncidentStatus::Rejected && auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
-                <div class="border border-border bg-surface p-5">
+                <div class="card p-5">
                     <p class="panel-title mb-3">Update status</p>
                     <form method="POST" action="{{ route('dashboard.incidents.status', $incident) }}" class="space-y-4">
                         @csrf
@@ -166,7 +168,7 @@
                 </div>
             @endif
 
-            <div class="border border-border bg-surface p-5">
+            <div class="card p-5">
                 <p class="panel-title mb-3">Status history</p>
                 @if ($incident->statusLogs->isEmpty())
                     <p class="text-sm text-muted">No status changes logged yet.</p>

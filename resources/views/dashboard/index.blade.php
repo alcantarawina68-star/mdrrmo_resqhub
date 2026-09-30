@@ -1,8 +1,6 @@
 <x-layouts.dashboard title="Overview">
     @if (isset($analytics))
-        <div class="mb-6">
-            <p class="text-sm text-muted">Welcome back, {{ auth()->user()->name }}. Here is a snapshot of your users and active sessions.</p>
-        </div>
+        <x-page-header description="Welcome back, {{ auth()->user()->name }}. Here is a snapshot of your users and active sessions." />
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div class="card p-5">
@@ -30,7 +28,7 @@
                     <a href="{{ route('dashboard.users') }}" class="btn btn-tertiary !px-0">View all</a>
                 </div>
 
-                <div class="divide-y divide-border border border-border bg-surface">
+                <div class="divide-y divide-border rounded-lg border border-border bg-surface">
                     @foreach ($analytics['users']['by_role'] as $row)
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-fg">{{ $row['label'] }}</span>
@@ -42,11 +40,11 @@
 
             <div>
                 <h2 class="mb-3 text-base font-semibold text-fg">Online by role</h2>
-                <div class="divide-y divide-border border border-border bg-surface">
+                <div class="divide-y divide-border rounded-lg border border-border bg-surface">
                     @foreach ($analytics['sessions']['online_by_role'] as $row)
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="flex items-center gap-2">
-                                <span class="h-2 w-2 rounded-full bg-success"></span>
+                                <span class="h-2 w-2 rounded-full bg-success" aria-hidden="true"></span>
                                 <span class="text-fg">{{ $row['label'] }}</span>
                             </span>
                             <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
@@ -77,10 +75,10 @@
                 <a href="{{ route('dashboard.sessions') }}" class="btn btn-tertiary !px-0">Manage sessions</a>
             </div>
 
-            <div class="overflow-x-auto border border-border bg-surface">
+            <div class="card overflow-x-auto">
                 <table class="w-full table-auto">
                     <thead>
-                        <tr class="bg-bg dark:bg-surface">
+                        <tr>
                             <th class="table-head">User</th>
                             <th class="table-head hidden sm:table-cell">Role</th>
                             <th class="table-head hidden md:table-cell">IP address</th>
@@ -106,12 +104,13 @@
             </div>
         </div>
     @else
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm text-muted">Welcome back, {{ auth()->user()->name }}. Here is what needs attention today.</p>
-            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
-                <a href="{{ route('dashboard.caller') }}" class="btn btn-primary">Encode Caller Report</a>
-            @endif
-        </div>
+        <x-page-header description="Welcome back, {{ auth()->user()->name }}. Here is what needs attention today.">
+            <x-slot:actions>
+                @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
+                    <a href="{{ route('dashboard.caller') }}" class="btn btn-primary">Encode Caller Report</a>
+                @endif
+            </x-slot:actions>
+        </x-page-header>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div class="card p-5">
@@ -139,11 +138,11 @@
                     <a href="{{ route('dashboard.incidents') }}" class="btn btn-tertiary !px-0">View all</a>
                 </div>
 
-                <div class="border border-border bg-surface">
+                <div class="card">
                     <div class="overflow-x-auto">
                     <table class="w-full table-auto">
                         <thead>
-                            <tr class="bg-bg dark:bg-surface">
+                            <tr>
                                 <th class="table-head">Incident</th>
                                 <th class="table-head">Barangay</th>
                                 <th class="table-head hidden sm:table-cell">Classification</th>
@@ -174,7 +173,7 @@
 
             <div>
                 <h2 class="mb-3 text-base font-semibold text-fg">By status</h2>
-                <div class="divide-y divide-border border border-border bg-surface">
+                <div class="divide-y divide-border rounded-lg border border-border bg-surface">
                     @foreach ($summary['by_status'] as $row)
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="flex items-center gap-2">

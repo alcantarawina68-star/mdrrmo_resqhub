@@ -56,3 +56,31 @@ test('mobile navigation menus stay pinned to the sticky header when scrolling', 
         ->assertOk()
         ->assertSee('fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg lg:hidden');
 });
+
+test('destructive confirmation dialogs are focusable and described for screen readers', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->communityUser()->create();
+
+    actingAs($admin)
+        ->get('/dashboard/users')
+        ->assertOk()
+        ->assertSee('delete-user-dialog-description', escape: false)
+        ->assertSee('x-ref="dialog"', escape: false)
+        ->assertSee('@keydown.tab="trap($event)"', escape: false);
+});
+
+test('the map filter sheet is an accessible labelled dialog', function () {
+    get('/')
+        ->assertOk()
+        ->assertSee('id="map-filter-sheet"', escape: false)
+        ->assertSee('aria-label="Map filters"', escape: false)
+        ->assertSee('@click.self="$store.bottomSheet.close()"', escape: false);
+});
+
+test('password fields expose a keyboard reachable visibility toggle', function () {
+    get('/login')
+        ->assertOk()
+        ->assertSee('name="password"', escape: false)
+        ->assertSee(':aria-pressed="show"', escape: false)
+        ->assertDontSee('aria-label="Toggle password visibility"', escape: false);
+});

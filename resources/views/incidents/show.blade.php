@@ -1,10 +1,10 @@
 <x-layouts.app title="{{ $incident->incident_number }}">
-    <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
         <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to map</a>
 
         <div class="grid gap-6 lg:grid-cols-2">
-            <div class="border border-border bg-surface">
-                <div id="detail-map" class="h-56 bg-bg sm:h-72" role="application" aria-label="Incident location map"></div>
+            <div class="card overflow-hidden">
+                <div id="detail-map" class="h-56 bg-bg sm:h-72 lg:h-[calc(100dvh-16rem)]" role="application" aria-label="Incident location map"></div>
             </div>
 
             <div class="flex flex-col gap-6">
@@ -17,7 +17,7 @@
                     <h2 class="mt-2 text-xl font-semibold text-fg sm:text-2xl">{{ $incident->incident_type->label() }}</h2>
                 </div>
 
-                <div class="divide-y divide-border border border-border bg-surface">
+                <div class="divide-y divide-border rounded-lg border border-border bg-surface">
                     <div class="flex justify-between gap-4 px-4 py-3 text-sm">
                         <span class="text-muted">Location</span>
                         <span class="text-right font-medium">{{ $incident->location_label ?? 'Location pending' }}</span>
@@ -50,7 +50,7 @@
                 @if ($incident->evidence->isNotEmpty())
                     <div>
                         <h3 class="mb-2">Attached evidence</h3>
-                        <ul class="divide-y divide-border border border-border bg-surface">
+                        <ul class="divide-y divide-border rounded-lg border border-border bg-surface">
                             @foreach ($incident->evidence as $item)
                                 <li class="text-sm">
                                     <div class="flex items-start gap-4 px-4 py-3">

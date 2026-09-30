@@ -1,4 +1,6 @@
 <x-layouts.dashboard title="Incidents">
+    <x-page-header description="Filter, review and manage every reported incident." />
+
     <div class="mb-5">
         <form method="GET" action="{{ route('dashboard.incidents') }}" class="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <div class="field">
@@ -31,11 +33,11 @@
         </form>
     </div>
 
-    <div class="border border-border bg-surface">
+    <div class="card">
         <div class="overflow-x-auto">
         <table class="w-full table-auto">
             <thead>
-                <tr class="bg-bg dark:bg-surface">
+                <tr>
                     <th class="table-head">Incident</th>
                     <th class="table-head hidden md:table-cell">Barangay</th>
                     <th class="table-head hidden lg:table-cell">Classification</th>

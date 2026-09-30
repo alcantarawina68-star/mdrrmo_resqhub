@@ -1,11 +1,8 @@
 <x-layouts.dashboard title="Site Information">
     <div class="mx-auto max-w-3xl">
-        <div class="mb-6">
-            <h2 class="text-base font-semibold text-fg">Agency and contact information</h2>
-            <p class="mt-1 text-sm text-muted">These details appear on the public site and in SMS messages. Changes apply immediately.</p>
-        </div>
+        <x-page-header description="Agency and contact information shown on the public site and in SMS messages. Changes apply immediately." />
 
-        <form method="POST" action="{{ route('dashboard.settings.update') }}" class="flex flex-col gap-4 border border-border bg-surface p-6">
+        <form method="POST" action="{{ route('dashboard.settings.update') }}" class="card flex flex-col gap-4 p-6">
             @csrf
 
             @foreach ($fields as $field)

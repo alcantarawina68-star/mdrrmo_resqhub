@@ -1,5 +1,5 @@
 <x-layouts.app title="My Reports">
-    <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
         <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h1>My Reports</h1>
@@ -9,16 +9,16 @@
         </div>
 
         @if ($incidents->isEmpty())
-            <div class="border border-border bg-surface p-8 text-center">
+            <div class="card mx-auto max-w-5xl p-8 text-center">
                 <p class="text-sm text-muted">You have not submitted any reports yet.</p>
                 <a href="{{ route('report.create') }}" class="btn btn-primary mt-4">Submit your first report</a>
             </div>
         @else
-            <div class="border border-border bg-surface">
+            <div class="card mx-auto max-w-5xl overflow-hidden">
                 <div class="overflow-x-auto">
                 <table class="w-full table-auto">
                     <thead>
-                        <tr class="bg-bg dark:bg-surface">
+                        <tr>
                             <th class="table-head">Incident</th>
                             <th class="table-head hidden sm:table-cell">Reported</th>
                             <th class="table-head">Status</th>
