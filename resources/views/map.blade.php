@@ -63,6 +63,7 @@
                 incidents: @js($incidents),
                 types: @js($types),
                 statuses: @js($statuses),
+                layers: @js(\App\Support\MapLayers::all()),
                 activeStatuses: ['verified', 'ongoing', 'closed'],
                 activeType: '',
                 search: '',
@@ -76,7 +77,7 @@
                     this.loading = true;
                     const el = document.getElementById('incident-map');
                     if (!el) return;
-                    this.map = ResqHub.createIncidentMap(el);
+                    this.map = ResqHub.createIncidentMap(el, { layers: this.layers });
                     this.render();
                     this.loading = false;
                     this.mapReady = true;

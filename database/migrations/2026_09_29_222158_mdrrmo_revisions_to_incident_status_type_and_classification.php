@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use Illuminate\Database\Migrations\Migration;
@@ -25,15 +24,24 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * The classification values this revision introduced, inlined so the
+     * migration stays runnable after the classification concept was retired and
+     * its enum deleted.
+     *
+     * @var array<int, string>
+     */
+    private const CLASSIFICATION_VALUES = ['red', 'green', 'yellow', 'black'];
+
+    /**
      * Historical priority values mapped onto the new classifications.
      *
      * @var array<string, string>
      */
     private const CLASSIFICATION_MAPPING = [
-        'urgent' => IncidentClassification::Black->value,
-        'high' => IncidentClassification::Red->value,
-        'medium' => IncidentClassification::Yellow->value,
-        'low' => IncidentClassification::Green->value,
+        'urgent' => 'black',
+        'high' => 'red',
+        'medium' => 'yellow',
+        'low' => 'green',
     ];
 
     /**
@@ -56,7 +64,7 @@ return new class extends Migration
         Schema::table('incidents', function (Blueprint $table) {
             $table->enum('priority', [
                 ...array_keys(self::CLASSIFICATION_MAPPING),
-                ...IncidentClassification::values(),
+                ...self::CLASSIFICATION_VALUES,
             ])->default('medium')->change();
         });
 
@@ -65,8 +73,8 @@ return new class extends Migration
         }
 
         Schema::table('incidents', function (Blueprint $table) {
-            $table->enum('priority', IncidentClassification::values())
-                ->default(IncidentClassification::Yellow->value)
+            $table->enum('priority', self::CLASSIFICATION_VALUES)
+                ->default('yellow')
                 ->change();
 
             $table->enum('status', IncidentStatus::values())
@@ -113,14 +121,14 @@ return new class extends Migration
         Schema::table('incidents', function (Blueprint $table) {
             $table->enum('priority', [
                 'low', 'medium', 'high', 'urgent',
-                ...IncidentClassification::values(),
+                ...self::CLASSIFICATION_VALUES,
             ])->default('medium')->change();
         });
 
         // New classifications have no pre-revision equivalent, so the affected
         // rows fall back to the former default rather than being guessed at.
         DB::table('incidents')
-            ->whereIn('priority', IncidentClassification::values())
+            ->whereIn('priority', self::CLASSIFICATION_VALUES)
             ->update(['priority' => 'medium']);
 
         Schema::table('incidents', function (Blueprint $table) {

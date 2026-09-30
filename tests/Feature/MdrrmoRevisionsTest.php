@@ -1,14 +1,14 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 use function Pest\Laravel\actingAs;
 
-function validClassificationPayload(array $overrides = []): array
+function validReportPayload(array $overrides = []): array
 {
     return array_merge([
         'incident_type' => IncidentType::Fire->value,
@@ -16,7 +16,6 @@ function validClassificationPayload(array $overrides = []): array
         'latitude' => 18.2756,
         'longitude' => 121.6756,
         'location_label' => 'Minanga',
-        'priority' => IncidentClassification::Red->value,
         'contact_number' => '09171234567',
     ], $overrides);
 }
@@ -39,17 +38,8 @@ test('only verified ongoing and closed incidents are publicly visible', function
     ]);
 });
 
-test('the classification enum exposes only the MDRRMO classifications', function () {
-    expect(IncidentClassification::values())->toBe(['red', 'green', 'yellow', 'black']);
-});
-
-test('classification labels carry the agreed colour indicators', function () {
-    expect(IncidentClassification::labels())->toBe([
-        'red' => '🔴 Red',
-        'green' => '🟢 Green',
-        'yellow' => '🟡 Yellow',
-        'black' => '⚫ Black',
-    ]);
+test('the priority column no longer exists on incidents', function () {
+    expect(Schema::hasColumn('incidents', 'priority'))->toBeFalse();
 });
 
 test('selectable incident types exclude the legacy combined type', function () {
@@ -81,27 +71,17 @@ test('incident types are grouped by the agreed categories', function () {
         ->not->toContain(IncidentType::TyphoonFlood->value);
 });
 
-test('an online report rejects a removed priority value', function () {
+test('an online report is accepted without a classification', function () {
     $user = User::factory()->communityUser()->create();
 
     actingAs($user)
-        ->post(route('report.store'), validClassificationPayload(['priority' => 'high']))
-        ->assertSessionHasErrors('priority');
-
-    expect(Incident::count())->toBe(0);
-});
-
-test('an online report accepts every current classification', function (string $classification) {
-    $user = User::factory()->communityUser()->create();
-
-    actingAs($user)
-        ->post(route('report.store'), validClassificationPayload(['priority' => $classification]))
+        ->post(route('report.store'), validReportPayload())
         ->assertSessionHasNoErrors();
 
-    expect(Incident::first()->priority)->toBe(IncidentClassification::from($classification));
-})->with(IncidentClassification::values());
+    expect(Incident::count())->toBe(1);
+});
 
-test('a caller report is stored with the default yellow classification', function () {
+test('a caller report is accepted without a classification', function () {
     $encoder = User::factory()->encoder()->create();
 
     actingAs($encoder)
@@ -117,7 +97,7 @@ test('a caller report is stored with the default yellow classification', functio
         ])
         ->assertSessionHasNoErrors();
 
-    expect(Incident::first()->priority)->toBe(IncidentClassification::Yellow);
+    expect(Incident::count())->toBe(1);
 });
 
 test('closing an incident is the only transition that records a resolution time', function () {
@@ -131,43 +111,53 @@ test('closing an incident is the only transition that records a resolution time'
     expect($incident->refresh()->resolved_at)->not->toBeNull();
 });
 
-test('the public map feeds every classification to the marker colours', function (string $classification) {
-    Incident::factory()->verified()
-        ->classification(IncidentClassification::from($classification))
-        ->create();
+test('the public map payload carries status but no classification', function () {
+    Incident::factory()->verified()->create();
 
-    // The map payload is emitted through `@js`, which hex-escapes quotes.
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('\u0022classification\u0022:\u0022'.$classification.'\u0022', false);
-})->with(IncidentClassification::values());
+        ->assertSee('status_label', false)
+        ->assertDontSee('classification', false)
+        ->assertDontSee('priority', false);
+});
 
-test('the public map styles all four classification colours in the stylesheet', function () {
+test('the stylesheet carries no classification marker rings', function () {
     $css = file_get_contents(resource_path('css/app.css'));
 
-    expect($css)->toContain('.incident-marker.is-red .shape')
-        ->toContain('.incident-marker.is-green .shape')
-        ->toContain('.incident-marker.is-yellow .shape')
-        ->toContain('.incident-marker.is-black .shape');
+    expect($css)->not->toContain('.incident-marker.is-red .shape')
+        ->not->toContain('.incident-marker.is-green .shape')
+        ->not->toContain('.incident-marker.is-yellow .shape')
+        ->not->toContain('.incident-marker.is-black .shape');
 });
 
-test('the incident api exposes classification aliases alongside priority', function () {
+test('the incident api no longer exposes priority or classification fields', function () {
     $admin = User::factory()->admin()->create();
-    $incident = Incident::factory()->verified()->classification(IncidentClassification::Black)->create();
+    $incident = Incident::factory()->verified()->create();
 
-    actingAs($admin, 'sanctum')->getJson("/api/v1/incidents/{$incident->id}")
-        ->assertStatus(200)
-        ->assertJsonPath('data.priority', 'black')
-        ->assertJsonPath('data.classification', 'black')
-        ->assertJsonPath('data.classification_label', '⚫ Black');
+    $response = actingAs($admin, 'sanctum')->getJson("/api/v1/incidents/{$incident->id}")
+        ->assertStatus(200);
+
+    expect($response->json('data'))
+        ->not->toHaveKey('priority')
+        ->not->toHaveKey('priority_label')
+        ->not->toHaveKey('classification')
+        ->not->toHaveKey('classification_label')
+        ->toHaveKey('status');
 });
 
-test('the incident api filters by the classification alias', function () {
+test('the report summary drops the classification breakdown', function () {
     $admin = User::factory()->admin()->create();
-    Incident::factory()->verified()->classification(IncidentClassification::Black)->create();
-    Incident::factory()->verified()->classification(IncidentClassification::Green)->create();
+    Incident::factory()->verified()->create();
 
-    actingAs($admin, 'sanctum')->getJson('/api/v1/incidents?classification=black')
-        ->assertStatus(200)
-        ->assertJsonCount(1, 'data');
+    $response = actingAs($admin, 'sanctum')->getJson('/api/v1/reports/summary')
+        ->assertStatus(200);
+
+    expect($response->json('data'))->not->toHaveKey('by_classification');
+});
+
+test('screens that used to show a classification no longer mention one', function () {
+    $user = User::factory()->communityUser()->create();
+
+    $this->actingAs($user)->get(route('report.create'))->assertDontSee('classification', false);
+    $this->actingAs($user)->get(route('home'))->assertDontSee('classification', false);
 });

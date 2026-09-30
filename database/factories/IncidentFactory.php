@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
@@ -33,7 +32,6 @@ class IncidentFactory extends Factory
             'source' => IncidentSource::Online,
             'is_anonymous' => false,
             'status' => IncidentStatus::UnderVerification,
-            'priority' => fake()->randomElement(IncidentClassification::cases()),
             'reported_at' => now()->subMinutes(fake()->numberBetween(5, 60 * 24 * 30)),
         ];
     }
@@ -80,13 +78,6 @@ class IncidentFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => IncidentStatus::Rejected,
             'verified_at' => now(),
-        ]);
-    }
-
-    public function classification(IncidentClassification $classification): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'priority' => $classification,
         ]);
     }
 

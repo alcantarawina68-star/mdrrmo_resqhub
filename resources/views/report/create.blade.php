@@ -17,6 +17,10 @@
                         </button>
                     </div>
                     <div id="report-map" class="h-64 rounded-lg border border-border bg-bg sm:h-96" role="application" aria-label="Map to pin incident location"></div>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <span class="label mb-0">Map imagery</span>
+                        <x-map-type-switch label="Map imagery" />
+                    </div>
                     <p class="text-xs text-muted" x-show="lat && lng">
                         Selected coordinates:
                         <span class="mono" x-text="lat + ', ' + lng"></span>
@@ -37,11 +41,6 @@
                         <div class="field">
                             <label class="label" for="incident_type">Incident type</label>
                             <x-incident-type-select name="incident_type" id="incident_type" />
-                        </div>
-
-                        <div class="field">
-                            <label class="label" for="priority">Incident classification</label>
-                            <x-classification-select name="priority" id="priority" />
                         </div>
 
                         @if ($canAssignUnit)
@@ -106,8 +105,7 @@
             Alpine.data('reportForm', () => ({
                 lat: '',
                 lng: '',
-                map: null,
-                marker: null,
+                picker: null,
                 locating: false,
                 submitting: false,
                 geoError: '',
@@ -115,30 +113,14 @@
                     const el = document.getElementById('report-map');
                     if (!el) return;
 
-                    const map = L.map(el, {
-                        center: [18.275, 121.675],
-                        zoom: 14,
-                        scrollWheelZoom: false,
+                    this.picker = ResqHub.createLocationPicker(el, {
+                        layers: @js(\App\Support\MapLayers::all()),
+                        onChange: (latlng) => this.setPoint(latlng),
                     });
-
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    }).addTo(map);
-
-                    this.map = map;
-                    map.on('click', (event) => this.setPoint(event.latlng));
                 },
                 setPoint(latlng) {
                     this.lat = latlng.lat.toFixed(7);
                     this.lng = latlng.lng.toFixed(7);
-
-                    if (this.marker) {
-                        this.marker.setLatLng(latlng);
-                    } else {
-                        this.marker = L.marker(latlng, { draggable: true }).addTo(this.map);
-                        this.marker.on('dragend', (event) => this.setPoint(event.target.getLatLng()));
-                    }
                 },
                 useMyLocation() {
                     if (!navigator.geolocation) {
@@ -151,9 +133,7 @@
 
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
-                            const latlng = { lat: position.coords.latitude, lng: position.coords.longitude };
-                            this.map.setView(latlng, 16);
-                            this.setPoint(latlng);
+                            this.picker.setPoint({ lat: position.coords.latitude, lng: position.coords.longitude }, 16);
                             this.locating = false;
                         },
                         () => {

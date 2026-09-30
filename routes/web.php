@@ -33,6 +33,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware('auth')->group(function () {
     Route::get('/confirm-password', [PasswordConfirmController::class, 'show'])->name('password.confirm');
     Route::post('/confirm-password', [PasswordConfirmController::class, 'store'])->name('password.confirm.submit');
+    Route::get('/confirm-password/resume', [PasswordConfirmController::class, 'resume'])->name('password.confirm.resume');
 });
 
 Route::middleware(['auth', 'active', 'single-session'])->group(function () {

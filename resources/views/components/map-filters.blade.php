@@ -12,6 +12,11 @@
         <a href="{{ route('login') }}" class="btn btn-secondary w-full">Log in to submit a report</a>
     @endauth
 
+    <div>
+        <p class="label mb-2">Map imagery</p>
+        <x-map-type-switch label="Map imagery" />
+    </div>
+
     <div class="field">
         <label class="label" for="map-type{{ $prefix }}">Incident type</label>
         <select id="map-type{{ $prefix }}" class="select" x-model="activeType" @change="render()">
@@ -58,21 +63,6 @@
             </div>
             <div class="flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-sm bg-success opacity-85"></span><span>Closed</span>
-            </div>
-        </div>
-        <p class="mt-3 text-xs text-muted">Ring shows classification</p>
-        <div class="mt-1.5 grid grid-cols-2 gap-1.5 text-sm">
-            <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-muted ring-2 ring-danger"></span><span>🔴 Red</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-muted ring-2 ring-success"></span><span>🟢 Green</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-muted ring-2 ring-warning"></span><span>🟡 Yellow</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-muted ring-2 ring-fg"></span><span>⚫ Black</span>
             </div>
         </div>
     </div>

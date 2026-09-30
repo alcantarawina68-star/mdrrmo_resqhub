@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentType;
 use App\Models\Incident;
 use App\Models\User;
@@ -11,7 +10,7 @@ use function Pest\Laravel\actingAs;
 
 test('the summary endpoint returns dashboard metrics', function () {
     $admin = User::factory()->admin()->create();
-    Incident::factory()->underVerification()->create(['incident_type' => IncidentType::Fire, 'priority' => IncidentClassification::Black]);
+    Incident::factory()->underVerification()->create(['incident_type' => IncidentType::Fire]);
     Incident::factory()->verified()->create();
     Incident::factory()->ongoing()->create();
     Incident::factory()->closed()->create();
@@ -27,7 +26,6 @@ test('the summary endpoint returns dashboard metrics', function () {
             'data' => [
                 'by_status' => [['value', 'label', 'total']],
                 'by_type' => [['label', 'types' => [['value', 'label', 'total']]]],
-                'by_classification' => [['value', 'label', 'total']],
                 'by_source' => [['value', 'label', 'total']],
             ],
         ]);

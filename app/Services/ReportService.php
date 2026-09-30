@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -48,10 +48,6 @@ class ReportService
             'by_status' => $this->labelsWithCounts($byStatus, IncidentStatus::labels()),
             'by_type' => $this->groupedTypeCounts(
                 $base->clone()->selectRaw('incident_type, COUNT(*) as total')->groupBy('incident_type')->pluck('total', 'incident_type'),
-            ),
-            'by_classification' => $this->labelsWithCounts(
-                $base->clone()->selectRaw('priority, COUNT(*) as total')->groupBy('priority')->pluck('total', 'priority'),
-                IncidentClassification::labels(),
             ),
             'by_source' => $this->labelsWithCounts(
                 $base->clone()->selectRaw('source, COUNT(*) as total')->groupBy('source')->pluck('total', 'source'),
@@ -117,6 +113,50 @@ class ReportService
     }
 
     /**
+     * Open incidents per assigned unit, so workload is visible before work is
+     * reassigned. Anything still unassigned is appended and flagged.
+     *
+     * @return array<int, array{label: string, total: int, tone: string}>
+     */
+    public function assignedUnitWorkload(int $limit = 6): array
+    {
+        $open = Incident::query()
+            ->whereIn('status', [
+                IncidentStatus::UnderVerification->value,
+                IncidentStatus::Ongoing->value,
+            ]);
+
+        $assigned = $open->clone()
+            ->whereNotNull('assigned_unit')
+            ->where('assigned_unit', '!=', '')
+            ->selectRaw('assigned_unit, COUNT(*) as total')
+            ->groupBy('assigned_unit')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => (string) $row->assigned_unit,
+                'total' => (int) $row->total,
+                'tone' => 'primary',
+            ])
+            ->all();
+
+        $unassigned = $open->clone()
+            ->where(fn (Builder $query) => $query->whereNull('assigned_unit')->orWhere('assigned_unit', ''))
+            ->count();
+
+        if ($unassigned > 0) {
+            $assigned[] = [
+                'label' => 'Unassigned',
+                'total' => (int) $unassigned,
+                'tone' => 'danger',
+            ];
+        }
+
+        return $assigned;
+    }
+
+    /**
      * Build a CSV export of incidents matching the given filters.
      */
     public function exportCsv(array $filters): string
@@ -127,7 +167,7 @@ class ReportService
         fwrite($handle, "\xEF\xBB\xBF");
 
         fputcsv($handle, [
-            'Incident No.', 'Type', 'Classification', 'Status', 'Location', 'Barangay', 'Source',
+            'Incident No.', 'Type', 'Status', 'Location', 'Barangay', 'Source',
             'Reporter', 'Reported At', 'Verified At', 'Resolved At',
         ]);
 
@@ -135,7 +175,6 @@ class ReportService
             fputcsv($handle, [
                 $incident->incident_number,
                 $incident->incident_type?->label(),
-                $incident->priority?->label(),
                 $incident->status?->label(),
                 $incident->location_label,
                 $incident->location_label,

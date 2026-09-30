@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Enums\UserRole;
@@ -26,7 +25,9 @@ class DashboardController extends Controller
 
     public function index(Request $request): View
     {
-        if ($request->user()->isSuperadmin()) {
+        $user = $request->user();
+
+        if ($user->isSuperadmin()) {
             return view('dashboard.index', [
                 'analytics' => $this->superadminAnalytics(),
             ]);
@@ -42,7 +43,26 @@ class DashboardController extends Controller
 
         $today = Incident::whereDate('reported_at', today())->count();
 
-        return view('dashboard.index', compact('summary', 'latest', 'today'));
+        // The assignment workload only appears for the roles that can act on it.
+        // Barangay officials and responders see the same incident data, just
+        // without the chart they cannot use.
+        $runsOperations = $user->hasRole(UserRole::Admin, UserRole::Encoder);
+
+        return view('dashboard.index', [
+            'summary' => $summary,
+            'latest' => $latest,
+            'today' => $today,
+            'runsOperations' => $runsOperations,
+            'trend' => $this->reports->dailyTrend(30),
+            'units' => $runsOperations ? $this->reports->assignedUnitWorkload() : null,
+            'barangays' => collect($this->reports->barangayBreakdown())
+                ->take(6)
+                ->map(fn (array $row) => [
+                    'label' => $row['barangay'],
+                    'total' => $row['total'],
+                ])
+                ->all(),
+        ]);
     }
 
     /**
@@ -119,7 +139,40 @@ class DashboardController extends Controller
                     ->all(),
             ],
             'online_users' => $onlineUsers,
+            'signup_trend' => $this->signupTrend(),
         ];
+    }
+
+    /**
+     * Daily signups for the last 30 days, so the superadmin overview shows
+     * registration growth rather than a single cumulative number.
+     *
+     * @return array<int, array{date: string, label: string, total: int}>
+     */
+    private function signupTrend(int $days = 30): array
+    {
+        $start = now()->subDays($days - 1)->startOfDay();
+        $end = now()->endOfDay();
+
+        $rows = User::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $trend = [];
+
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $key = $date->format('Y-m-d');
+
+            $trend[] = [
+                'date' => $key,
+                'label' => $date->format('M d'),
+                'total' => (int) ($rows->get($key) ?? 0),
+            ];
+        }
+
+        return $trend;
     }
 
     public function incidents(Request $request): View
@@ -132,10 +185,6 @@ class DashboardController extends Controller
 
         if ($request->filled('type') && in_array($request->input('type'), IncidentType::values(), true)) {
             $query->where('incident_type', $request->input('type'));
-        }
-
-        if ($request->filled('priority') && in_array($request->input('priority'), IncidentClassification::values(), true)) {
-            $query->where('priority', $request->input('priority'));
         }
 
         if ($request->filled('search')) {
@@ -220,7 +269,6 @@ class DashboardController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'location_label' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'in:'.implode(',', IncidentClassification::values())],
         ]);
 
         $this->incidents->updateDetails($request->user(), $incident, $data);

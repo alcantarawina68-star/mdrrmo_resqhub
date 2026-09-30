@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Incident;
 use App\Models\User;
+use App\Support\MapLayers;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -83,4 +85,34 @@ test('password fields expose a keyboard reachable visibility toggle', function (
         ->assertSee('name="password"', escape: false)
         ->assertSee(':aria-pressed="show"', escape: false)
         ->assertDontSee('aria-label="Toggle password visibility"', escape: false);
+});
+
+test('every map offers the shared base layer switch', function () {
+    $responder = User::factory()->responder()->create();
+    $admin = User::factory()->admin()->create();
+    $incident = Incident::factory()->verified()->create();
+
+    $pages = [
+        get('/'),
+        actingAs($responder)->get('/report'),
+        actingAs($admin)->get('/dashboard/caller'),
+        get("/incidents/{$incident->id}"),
+    ];
+
+    foreach ($pages as $page) {
+        $page->assertOk()
+            ->assertSee('aria-label="Map imagery"', escape: false)
+            ->assertSee('x-data="mapLayerSwitch(', escape: false)
+            ->assertSee('@click="$store.mapLayer.set(layer.key)"', escape: false);
+    }
+});
+
+test('base layer options cover standard, satellite and terrain', function () {
+    $keys = array_column(MapLayers::all(), 'key');
+
+    expect($keys)->toBe(['standard', 'satellite', 'terrain']);
+
+    foreach (MapLayers::all() as $layer) {
+        expect($layer['attribution'])->not->toBeEmpty();
+    }
 });

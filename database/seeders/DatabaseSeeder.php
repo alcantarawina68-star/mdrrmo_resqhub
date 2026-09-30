@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\AnnouncementCategory;
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
 use App\Models\Announcement;
@@ -70,12 +69,11 @@ class DatabaseSeeder extends Seeder
             };
         });
 
-        $black = Incident::factory()->count(3)->ongoing()
-            ->classification(IncidentClassification::Black)
+        $assigned = Incident::factory()->count(3)->ongoing()
             ->assignedTo('Rescue 117')
             ->create(['user_id' => $reporters->random()]);
 
-        $black->each(fn (Incident $incident) => $this->seedStatusLog($incident, $encoder, IncidentStatus::Verified, then: IncidentStatus::Ongoing));
+        $assigned->each(fn (Incident $incident) => $this->seedStatusLog($incident, $encoder, IncidentStatus::Verified, then: IncidentStatus::Ongoing));
 
         Announcement::factory()->count(8)->create(['user_id' => $encoder->id]);
         Announcement::factory()->count(2)->expired()->create(['user_id' => $encoder->id]);

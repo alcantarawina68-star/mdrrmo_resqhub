@@ -78,7 +78,6 @@ Emergency incidents reported by community users or by phone (caller-based).
 | caller_contact | VARCHAR(20) | Yes | `NULL` | Caller-based incidents |
 | is_anonymous | BOOLEAN | No | `0` | |
 | status | ENUM | No | `under_verification` | See [Incident Status enum](#incident-status) |
-| priority | ENUM | No | `yellow` | Column name retained for backward compatibility; see [Incident Classification enum](#incident-classification) |
 | assigned_unit | VARCHAR(120) | Yes | `NULL` | Assigned responder/unit |
 | reported_at | TIMESTAMP | No | `CURRENT_TIMESTAMP` | |
 | verified_at | TIMESTAMP | Yes | `NULL` | |
@@ -319,18 +318,6 @@ only status that populates `resolved_at`.
 | --- | --- |
 | `online` | Online |
 | `caller_based` | Caller-Based |
-
-### Incident Classification
-Stored in the `incidents.priority` column. The column name is retained so the
-existing form field, filter key, and API key keep working; the API additionally
-exposes `classification` and `classification_label` as aliases.
-
-| Value | Label | Migrated From |
-| --- | --- | --- |
-| `red` | 🔴 Red | `high` |
-| `green` | 🟢 Green | `low` |
-| `yellow` | 🟡 Yellow | `medium` |
-| `black` | ⚫ Black | `urgent` |
 
 ### Announcement Category
 | Value | Label |

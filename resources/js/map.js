@@ -1,3 +1,128 @@
+const LAYER_STORAGE_KEY = 'resqhub:map-layer';
+const DEFAULT_BASE_LAYER = 'standard';
+const maps = new Map();
+
+function storedLayer() {
+    try {
+        return localStorage.getItem(LAYER_STORAGE_KEY);
+    } catch (e) {
+        return null;
+    }
+}
+
+export function preferredBaseLayer() {
+    return storedLayer() ?? DEFAULT_BASE_LAYER;
+}
+
+export function rememberBaseLayer(key) {
+    try {
+        localStorage.setItem(LAYER_STORAGE_KEY, key);
+    } catch (e) {
+        /* storage unavailable — the choice only lasts for this page */
+    }
+}
+
+function createBaseLayers(map, definitions = []) {
+    const layers = new Map();
+    let currentKey = null;
+
+    definitions.forEach((definition) => {
+        layers.set(
+            definition.key,
+            L.tileLayer(definition.url, {
+                maxZoom: definition.max_zoom ?? 19,
+                subdomains: definition.subdomains ?? 'abc',
+                attribution: definition.attribution,
+            }),
+        );
+    });
+
+    function apply(key) {
+        const next = layers.get(key);
+
+        if (!next) {
+            return;
+        }
+
+        if (currentKey) {
+            layers.get(currentKey)?.remove();
+        }
+
+        next.addTo(map);
+        currentKey = key;
+
+        const definition = definitions.find((item) => item.key === key);
+        map.getContainer().classList.toggle('map-tiles-light', definition?.light ?? false);
+    }
+
+    return {
+        apply,
+        applyPreferred() {
+            const preferred = preferredBaseLayer();
+            apply(layers.has(preferred) ? preferred : definitions[0]?.key);
+        },
+        has(key) {
+            return layers.has(key);
+        },
+    };
+}
+
+export function setMapBaseLayer(key) {
+    maps.forEach((controller) => {
+        if (controller?.layers?.has(key)) {
+            controller.layers.apply(key);
+        }
+    });
+}
+
+export function createLocationPicker(element, options = {}) {
+    const map = L.map(element, {
+        center: options.center ?? [18.275, 121.675],
+        zoom: options.zoom ?? 14,
+        scrollWheelZoom: false,
+    });
+
+    const controller = { map, layers: null, marker: null };
+
+    controller.layers = createBaseLayers(map, options.layers ?? []);
+    controller.layers.applyPreferred();
+    maps.set(element, controller);
+
+    function render(latlng) {
+        if (controller.marker) {
+            controller.marker.setLatLng(latlng);
+            return;
+        }
+
+        controller.marker = L.marker(latlng, {
+            draggable: true,
+            icon: L.divIcon({
+                className: '',
+                html: '<span class="location-pin" aria-hidden="true"></span>',
+                iconSize: [28, 36],
+                iconAnchor: [14, 34],
+            }),
+            keyboard: true,
+            alt: 'Selected report location',
+        }).addTo(map);
+
+        controller.marker.on('dragend', (event) => options.onChange?.(event.target.getLatLng()));
+    }
+
+    map.on('click', (event) => {
+        render(event.latlng);
+        options.onChange?.(event.latlng);
+    });
+
+    return {
+        map,
+        setPoint(latlng, zoom = null) {
+            zoom ? map.setView(latlng, zoom) : map.panTo(latlng);
+            render(latlng);
+        },
+    };
+}
+
 export function createIncidentMap(element, options = {}) {
     const showDetailsLink = options.showDetailsLink ?? true;
 
@@ -8,26 +133,16 @@ export function createIncidentMap(element, options = {}) {
         attributionControl: options.attributionControl ?? true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    const baseLayers = createBaseLayers(map, options.layers ?? []);
+    baseLayers.applyPreferred();
+
+    const controller = { map, layers: baseLayers };
+    maps.set(element, controller);
 
     const markers = L.layerGroup().addTo(map);
 
-    const CLASSIFICATIONS = ['red', 'green', 'yellow', 'black'];
-
     function markerClass(incident) {
-        const classes = ['incident-marker'];
-        classes.push(`is-${incident.status}`);
-
-        const classification = incident.classification ?? incident.priority;
-
-        if (CLASSIFICATIONS.includes(classification)) {
-            classes.push(`is-${classification}`);
-        }
-
-        return classes.join(' ');
+        return ['incident-marker', `is-${incident.status}`].join(' ');
     }
 
     function shapeFor(incident) {
@@ -76,15 +191,6 @@ export function createIncidentMap(element, options = {}) {
             chip.textContent = incident.status_label ?? incident.status;
 
             meta.append(id, chip);
-
-            const classification = incident.classification ?? incident.priority;
-
-            if (CLASSIFICATIONS.includes(classification)) {
-                const classificationChip = document.createElement('span');
-                classificationChip.className = `chip chip-${classification} normal-case`;
-                classificationChip.textContent = incident.classification_label ?? classification;
-                meta.append(classificationChip);
-            }
 
             const title = document.createElement('div');
             title.style.fontWeight = '600';
@@ -154,6 +260,9 @@ export function createIncidentMap(element, options = {}) {
         setIncidents,
         fitIncidents,
         clear,
+        setBaseLayer(key) {
+            baseLayers.apply(key);
+        },
         get center() {
             return map.getCenter();
         },

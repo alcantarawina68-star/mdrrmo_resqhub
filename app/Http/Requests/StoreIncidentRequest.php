@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentType;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,7 +23,6 @@ class StoreIncidentRequest extends FormRequest
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'location_label' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'string', 'in:'.implode(',', IncidentClassification::values())],
             'contact_number' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'emergency_contact' => ['nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'is_anonymous' => ['nullable', 'boolean'],

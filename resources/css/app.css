@@ -205,23 +205,6 @@
         @apply border-danger/25 bg-danger/10 text-danger;
     }
 
-    /* Incident classification */
-    .chip-red {
-        @apply border-danger/25 bg-danger/10 text-danger;
-    }
-
-    .chip-green {
-        @apply border-success/25 bg-success/10 text-success;
-    }
-
-    .chip-yellow {
-        @apply border-warning/40 bg-warning/15 text-warning-fg;
-    }
-
-    .chip-black {
-        @apply border-fg/25 bg-fg/10 text-fg;
-    }
-
     /* Announcement categories */
     .chip-advisory {
         @apply border-secondary/25 bg-secondary/10 text-secondary;
@@ -305,8 +288,39 @@
     font-family: var(--font-sans);
 }
 
-.dark .leaflet-container {
+/*
+ * Dark mode dims light base layers (Standard, Terrain); imagery is left
+ * untouched. The class is set from the active layer's `light` flag in
+ * `resources/js/map.js`.
+ */
+.dark .leaflet-container.map-tiles-light {
     filter: brightness(0.85) contrast(1.1);
+}
+
+.map-layer-switch {
+    @apply flex flex-wrap items-center gap-1 rounded-lg border border-border bg-surface/95 p-1 shadow-sm backdrop-blur;
+}
+
+.map-layer-switch-option {
+    @apply min-h-8 rounded-md px-3 text-xs font-medium text-muted transition-colors;
+    min-width: 44px;
+}
+
+.map-layer-switch-option:hover {
+    @apply bg-border/60 text-fg;
+}
+
+.map-layer-switch-option.is-active {
+    @apply bg-primary text-white;
+}
+
+.location-pin {
+    display: block;
+    width: 28px;
+    height: 36px;
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary) 55%, transparent 55%);
+    clip-path: polygon(50% 100%, 0% 42%, 0% 18%, 50% 0, 100% 18%, 100% 42%);
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .incident-marker {
@@ -339,33 +353,8 @@
     opacity: 0.85;
 }
 
-/*
- * Classification is shown as a ring around the status shape, so the fill keeps
- * meaning "status" while the ring carries the 🔴 Red / 🟢 Green / 🟡 Yellow /
- * ⚫ Black classification.
- */
-.incident-marker .shape {
-    box-shadow: 0 0 0 2px transparent;
-}
-
-.incident-marker.is-red .shape {
-    box-shadow: 0 0 0 2px var(--color-danger);
-}
-
-.incident-marker.is-green .shape {
-    box-shadow: 0 0 0 2px var(--color-success);
-}
-
-.incident-marker.is-yellow .shape {
-    box-shadow: 0 0 0 2px var(--color-warning);
-}
-
-.incident-marker.is-black .shape {
-    box-shadow: 0 0 0 2px var(--color-fg);
-}
-
-.incident-popup .leaflet-popup-content-wrapper {
-    border-radius: 0;
+    .incident-popup .leaflet-popup-content-wrapper {
+    border-radius: 0.5rem;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 

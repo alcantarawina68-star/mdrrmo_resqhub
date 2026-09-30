@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
@@ -14,7 +13,6 @@ $onlinePayload = [
     'latitude' => 18.2756,
     'longitude' => 121.6756,
     'location_label' => 'Minanga',
-    'priority' => IncidentClassification::Red->value,
     'contact_number' => '09171234567',
 ];
 

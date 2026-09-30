@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
@@ -28,7 +27,7 @@ return new class extends Migration
             $table->string('caller_contact', 20)->nullable();
             $table->boolean('is_anonymous')->default(false);
             $table->enum('status', IncidentStatus::values())->default(IncidentStatus::UnderVerification->value);
-            $table->enum('priority', IncidentClassification::values())->default(IncidentClassification::Yellow->value);
+            $table->enum('priority', ['red', 'green', 'yellow', 'black'])->default('yellow');
             $table->string('assigned_unit', 120)->nullable();
             $table->timestamp('reported_at')->useCurrent();
             $table->timestamp('verified_at')->nullable();

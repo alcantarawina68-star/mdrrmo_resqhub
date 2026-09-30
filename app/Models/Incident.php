@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
@@ -31,7 +30,6 @@ class Incident extends Model
         'emergency_contact',
         'is_anonymous',
         'status',
-        'priority',
         'assigned_unit',
         'reported_at',
         'verified_at',
@@ -49,7 +47,6 @@ class Incident extends Model
             'source' => IncidentSource::class,
             'is_anonymous' => 'boolean',
             'status' => IncidentStatus::class,
-            'priority' => IncidentClassification::class,
             'reported_at' => 'datetime',
             'verified_at' => 'datetime',
             'resolved_at' => 'datetime',

@@ -17,7 +17,7 @@ class PublicController extends Controller
         $incidents = Incident::query()
             ->publiclyVisible()
             ->latest('reported_at')
-            ->get(['id', 'incident_type', 'description', 'latitude', 'longitude', 'location_label', 'status', 'priority', 'reported_at'])
+            ->get(['id', 'incident_type', 'description', 'latitude', 'longitude', 'location_label', 'status', 'reported_at'])
             ->map(fn (Incident $incident) => [
                 'id' => $incident->id,
                 'incident_number' => $incident->incident_number,
@@ -29,10 +29,6 @@ class PublicController extends Controller
                 'location_label' => $incident->location_label,
                 'status' => $incident->status->value,
                 'status_label' => $incident->status->label(),
-                'priority' => $incident->priority->value,
-                'priority_label' => $incident->priority->label(),
-                'classification' => $incident->priority->value,
-                'classification_label' => $incident->priority->label(),
             ])
             ->values()
             ->all();

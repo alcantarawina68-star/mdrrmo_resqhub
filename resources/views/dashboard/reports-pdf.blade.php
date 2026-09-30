@@ -42,7 +42,6 @@
                 <tr>
                     <th>Incident No.</th>
                     <th>Type</th>
-                    <th>Classification</th>
                     <th>Status</th>
                     <th>Location</th>
                     <th>Source</th>
@@ -57,7 +56,6 @@
                     <tr>
                         <td>{{ $incident->incident_number }}</td>
                         <td>{{ $incident->incident_type?->label() }}</td>
-                        <td>{{ $incident->priority?->label() }}</td>
                         <td>{{ $incident->status?->label() }}</td>
                         <td>{{ $incident->location_label ?? '—' }}</td>
                         <td>{{ $incident->source?->label() }}</td>

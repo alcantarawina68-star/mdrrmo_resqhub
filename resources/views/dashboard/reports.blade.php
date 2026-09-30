@@ -105,30 +105,14 @@
         </div>
 
         <div class="card p-5">
-            <p class="panel-title mb-4">By source &amp; classification</p>
-            <div class="grid gap-6 sm:grid-cols-2">
-                <div>
-                    <p class="label mb-2">Source</p>
-                    <div class="divide-y divide-border">
-                        @foreach ($summary['by_source'] as $row)
-                            <div class="flex items-center justify-between py-1.5 text-sm">
-                                <span>{{ $row['label'] }}</span>
-                                <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
-                            </div>
-                        @endforeach
+            <p class="panel-title mb-4">By source</p>
+            <div class="divide-y divide-border">
+                @foreach ($summary['by_source'] as $row)
+                    <div class="flex items-center justify-between py-1.5 text-sm">
+                        <span>{{ $row['label'] }}</span>
+                        <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
                     </div>
-                </div>
-                <div>
-                    <p class="label mb-2">Classification</p>
-                    <div class="divide-y divide-border">
-                        @foreach ($summary['by_classification'] as $row)
-                            <div class="flex items-center justify-between py-1.5 text-sm">
-                                <span>{{ $row['label'] }}</span>
-                                <span class="mono font-semibold text-fg">{{ $row['total'] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
     </div>

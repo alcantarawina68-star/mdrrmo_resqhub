@@ -1,6 +1,12 @@
 import Alpine from 'alpinejs';
 import L from 'leaflet';
-import { createIncidentMap } from './map';
+import {
+    createIncidentMap,
+    createLocationPicker,
+    preferredBaseLayer,
+    rememberBaseLayer,
+    setMapBaseLayer,
+} from './map';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -30,6 +36,9 @@ window.Alpine = Alpine;
 window.L = L;
 window.ResqHub = {
     createIncidentMap,
+    createLocationPicker,
+    preferredBaseLayer,
+    setMapBaseLayer,
     trapFocus,
     confirmDialog: () => ({
         show: false,
@@ -66,6 +75,26 @@ Alpine.store('darkMode', {
         this.apply();
     },
 });
+
+/*
+ * Single source of truth for the base layer (Standard / Satellite / Terrain) so
+ * every map on the page and every switch stays in sync.
+ */
+Alpine.store('mapLayer', {
+    key: preferredBaseLayer(),
+    set(key) {
+        this.key = key;
+        rememberBaseLayer(key);
+        setMapBaseLayer(key);
+    },
+});
+
+Alpine.data('mapLayerSwitch', (layers) => ({
+    layers,
+    get key() {
+        return this.$store.mapLayer.key;
+    },
+}));
 
 Alpine.store('toasts', {
     items: [],

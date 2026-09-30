@@ -7,15 +7,17 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="mono text-lg">{{ $incident->incident_number }}</h2>
                     <x-status-chip :status="$incident->status" />
-                    <x-classification-badge :classification="$incident->priority" />
                     <span class="mono ml-auto text-xs text-muted">reported {{ $incident->reported_at?->format('M j, Y g:i A') }}</span>
                 </div>
                 <h3 class="mt-3 text-xl font-semibold text-fg">{{ $incident->incident_type->label() }}</h3>
                 <p class="mt-2 whitespace-pre-line text-sm text-fg/90">{{ $incident->description }}</p>
             </div>
 
-            <div class="card">
+            <div class="card relative overflow-hidden">
                 <div id="detail-map" class="h-64 bg-bg" role="application" aria-label="Incident location map"></div>
+                <div class="absolute right-3 top-3 z-[1000]">
+                    <x-map-type-switch label="Map imagery" />
+                </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -87,10 +89,6 @@
                         <div class="field">
                             <label class="label" for="edit-type">Incident type</label>
                             <x-incident-type-select name="incident_type" id="edit-type" :value="$incident->incident_type->value" />
-                        </div>
-                        <div class="field">
-                            <label class="label" for="edit-priority">Incident classification</label>
-                            <x-classification-select name="priority" id="edit-priority" :value="$incident->priority->value" />
                         </div>
                         <div class="field sm:col-span-2">
                             <label class="label" for="edit-location">Barangay / landmark</label>
@@ -201,9 +199,9 @@
             Alpine.data('detailMap', () => ({
                 init() {
                     const map = ResqHub.createIncidentMap(document.getElementById('detail-map'), {
+                        layers: @js(\App\Support\MapLayers::all()),
                         zoom: 15,
                         zoomControl: false,
-                        attributionControl: false,
                         showDetailsLink: false,
                     });
                     map.addIncident(@js([
@@ -211,8 +209,6 @@
                         'longitude' => $incident->longitude,
                         'status' => $incident->status->value,
                         'status_label' => $incident->status->label(),
-                        'priority' => $incident->priority->value,
-                        'classification' => $incident->priority->value,
                     ]));
                     setTimeout(() => map.map.invalidateSize(), 100);
                 },

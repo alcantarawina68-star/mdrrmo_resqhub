@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\IncidentClassification;
 use App\Enums\IncidentType;
 use App\Jobs\SendSms;
 use App\Models\Incident;
@@ -128,7 +127,6 @@ test('submitting an online report sends an SMS only to its emergency contact', f
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => IncidentClassification::Red->value,
             'emergency_contact' => '09179998888',
         ])
         ->assertRedirect(route('my-reports'));
@@ -175,7 +173,6 @@ test('an auto-verified online report sends a single combined received-and-verifi
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => IncidentClassification::Red->value,
             'emergency_contact' => '09179998888',
         ])
         ->assertRedirect(route('my-reports'));
@@ -198,7 +195,6 @@ test('no SMS is sent when the incident has no contact number', function () {
             'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
             'latitude' => 18.2756,
             'longitude' => 121.6756,
-            'priority' => IncidentClassification::Red->value,
         ])
         ->assertRedirect(route('my-reports'));
 
