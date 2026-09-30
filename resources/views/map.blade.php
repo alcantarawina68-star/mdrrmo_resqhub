@@ -67,6 +67,8 @@
                 activeStatuses: ['verified', 'ongoing', 'closed'],
                 activeType: '',
                 search: '',
+                heat: true,
+                version: 0,
                 map: null,
                 loading: true,
                 mapReady: false,
@@ -78,9 +80,19 @@
                     const el = document.getElementById('incident-map');
                     if (!el) return;
                     this.map = ResqHub.createIncidentMap(el, { layers: this.layers });
+                    this.map.map.on('moveend zoomend', () => {
+                        this.version++;
+                    });
                     this.render();
                     this.loading = false;
                     this.mapReady = true;
+                },
+                hotSpots() {
+                    if (!this.map) return [];
+                    return this.map.hotSpots(this.filtered());
+                },
+                focusSpot(spot) {
+                    this.map.map.setView(spot.center, Math.max(this.map.zoom, 14));
                 },
                 filtered() {
                     return this.incidents.filter((incident) => {
@@ -98,6 +110,8 @@
                     if (!this.map) return;
                     const list = this.filtered();
                     this.map.setIncidents(list);
+                    this.map.setHeatPoints(list);
+                    this.map.setHeatVisible(this.heat);
                     if (list.length) this.map.fitIncidents(list);
                 },
                 clearFilters() {

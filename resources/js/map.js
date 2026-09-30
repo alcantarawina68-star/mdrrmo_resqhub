@@ -75,6 +75,120 @@ export function setMapBaseLayer(key) {
     });
 }
 
+const DEFAULT_HEAT_GRADIENT = {
+    0.0: 'rgba(43, 108, 176, 0)',
+    0.35: 'rgba(43, 108, 176, 0.55)',
+    0.55: 'rgba(249, 168, 37, 0.6)',
+    0.75: 'rgba(226, 95, 45, 0.7)',
+    1.0: 'rgba(198, 40, 40, 0.85)',
+};
+
+const HeatLayer = L.Layer.extend({
+    options: {
+        radius: 28,
+        maxOpacity: 0.8,
+        gradient: null,
+    },
+
+    initialize(points, options) {
+        this._points = points ?? [];
+        L.Util.setOptions(this, options);
+        this._gradient = this.options.gradient ?? DEFAULT_HEAT_GRADIENT;
+        this._stops = Object.keys(this._gradient).map(Number).sort((a, b) => a - b);
+    },
+
+    setPoints(points) {
+        this._points = points ?? [];
+        this._reset();
+        return this;
+    },
+
+    setVisible(visible) {
+        if (this._canvas) {
+            this._canvas.classList.toggle('is-hidden', !visible);
+        }
+        return this;
+    },
+
+    onAdd(map) {
+        this._map = map;
+
+        if (!this._canvas) {
+            this._canvas = L.DomUtil.create('canvas', 'leaflet-heat-layer');
+            this._ctx = this._canvas.getContext('2d');
+        }
+
+        map.getPanes().overlayPane.appendChild(this._canvas);
+        map.on('moveend resize viewreset zoomend', this._reset, this);
+        map.on('move', this._move, this);
+        this._reset();
+        return this;
+    },
+
+    onRemove(map) {
+        L.DomUtil.remove(this._canvas);
+        map.off('moveend resize viewreset zoomend', this._reset, this);
+        map.off('move', this._move, this);
+        this._canvas = this._ctx = this._map = null;
+        return this;
+    },
+
+    _move() {
+        if (!this._canvas || !this._map) {
+            return;
+        }
+        L.DomUtil.setPosition(this._canvas, this._map.containerPointToLayerPoint([0, 0]));
+    },
+
+    _reset() {
+        if (!this._canvas || !this._map) {
+            return;
+        }
+
+        const size = this._map.getSize();
+        this._canvas.width = size.x;
+        this._canvas.height = size.y;
+        this._canvas.style.width = `${size.x}px`;
+        this._canvas.style.height = `${size.y}px`;
+        this._move();
+        this._redraw();
+    },
+
+    _redraw() {
+        if (!this._canvas || !this._map || !this._ctx) {
+            return;
+        }
+
+        const ctx = this._ctx;
+        const size = this._map.getSize();
+        const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+        const radius = this.options.radius;
+        const margin = radius + 4;
+
+        ctx.clearRect(0, 0, size.x, size.y);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = this.options.maxOpacity;
+
+        this._points.forEach((incident) => {
+            const point = this._map.latLngToLayerPoint([incident.latitude, incident.longitude]);
+            const x = point.x - topLeft.x;
+            const y = point.y - topLeft.y;
+
+            if (x < -margin || x > size.x + margin || y < -margin || y > size.y + margin) {
+                return;
+            }
+
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            this._stops.forEach((stop) => gradient.addColorStop(stop, this._gradient[stop]));
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        });
+    },
+});
+
 export function createLocationPicker(element, options = {}) {
     const map = L.map(element, {
         center: options.center ?? [18.275, 121.675],
@@ -140,6 +254,75 @@ export function createIncidentMap(element, options = {}) {
     maps.set(element, controller);
 
     const markers = L.layerGroup().addTo(map);
+    const heat = new HeatLayer([], options.heat ?? {}).addTo(map);
+
+    function hotSpots(incidents, cells = 5, limit = 6) {
+        const size = map.getSize();
+        const cellW = size.x / cells;
+        const cellH = size.y / cells;
+        const buckets = new Map();
+
+        incidents.forEach((incident) => {
+            const point = map.latLngToContainerPoint([incident.latitude, incident.longitude]);
+
+            if (point.x < 0 || point.y < 0 || point.x > size.x || point.y > size.y) {
+                return;
+            }
+
+            const key = `${Math.floor(point.x / cellW)}:${Math.floor(point.y / cellH)}`;
+            let bucket = buckets.get(key);
+
+            if (!bucket) {
+                bucket = { count: 0, types: new Map(), labels: new Map(), points: [] };
+                buckets.set(key, bucket);
+            }
+
+            bucket.count += 1;
+            bucket.points.push(incident);
+            bucket.types.set(incident.incident_type, (bucket.types.get(incident.incident_type) ?? 0) + 1);
+            const label = incident.location_label ?? incident.incident_number ?? null;
+
+            if (label) {
+                bucket.labels.set(label, (bucket.labels.get(label) ?? 0) + 1);
+            }
+        });
+
+        return [...buckets.values()]
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit)
+            .map((bucket) => {
+                let dominantType = null;
+                let dominantCount = 0;
+
+                bucket.types.forEach((count, type) => {
+                    if (count > dominantCount) {
+                        dominantType = type;
+                        dominantCount = count;
+                    }
+                });
+
+                let label = null;
+                let labelCount = 0;
+
+                bucket.labels.forEach((count, candidate) => {
+                    if (count > labelCount) {
+                        label = candidate;
+                        labelCount = count;
+                    }
+                });
+
+                const dominant = bucket.points.find((incident) => incident.incident_type === dominantType);
+                const latitude = bucket.points.reduce((sum, incident) => sum + incident.latitude, 0) / bucket.count;
+                const longitude = bucket.points.reduce((sum, incident) => sum + incident.longitude, 0) / bucket.count;
+
+                return {
+                    count: bucket.count,
+                    label: label ?? `${bucket.count} incidents`,
+                    dominantLabel: dominant?.incident_type_label ?? dominantType,
+                    center: [latitude, longitude],
+                };
+            });
+    }
 
     function markerClass(incident) {
         return ['incident-marker', `is-${incident.status}`].join(' ');
@@ -256,10 +439,18 @@ export function createIncidentMap(element, options = {}) {
     return {
         map,
         markers,
+        heat,
         addIncident,
         setIncidents,
         fitIncidents,
         clear,
+        setHeatPoints(points) {
+            heat.setPoints(points);
+        },
+        setHeatVisible(visible) {
+            heat.setVisible(visible);
+        },
+        hotSpots,
         setBaseLayer(key) {
             baseLayers.apply(key);
         },

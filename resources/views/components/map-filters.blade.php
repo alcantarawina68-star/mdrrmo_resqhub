@@ -37,6 +37,53 @@
             x-model="search" @input="render()">
     </div>
 
+    <div>
+        <div class="mb-2 flex items-center justify-between">
+            <p class="label mb-0">Heatmap</p>
+            <label class="heat-switch">
+                <input type="checkbox" class="sr-only" x-model="heat" @change="render()"
+                    aria-label="Toggle heatmap overlay">
+                <span class="heat-switch-track" aria-hidden="true">
+                    <span class="heat-switch-knob"></span>
+                </span>
+            </label>
+        </div>
+
+        <div x-show="heat" x-cloak class="mt-3">
+            <div class="heat-legend" aria-hidden="true"></div>
+            <div class="mt-1 flex justify-between text-[10px] leading-none text-muted">
+                <span>Few</span>
+                <span>Many</span>
+            </div>
+            <p class="mt-2 text-xs text-muted">Density of the incidents currently shown. Hot spots show the dominant
+                incident type.</p>
+        </div>
+    </div>
+
+    <div x-show="heat" x-cloak>
+        <p class="label mb-2">Hot spots</p>
+
+        <template x-if="hotSpots().length">
+            <ol class="heat-spots">
+                <template x-for="(spot, index) in hotSpots()" :key="version + '-' + index">
+                    <li>
+                        <button type="button" class="heat-spot" @click="focusSpot(spot)">
+                            <span class="mono mt-0.5 text-xs text-muted" x-text="String(index + 1).padStart(2, '0')"></span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-medium text-fg" x-text="spot.label"></span>
+                                <span class="block text-xs text-muted" x-text="spot.count + ' · ' + spot.dominantLabel"></span>
+                            </span>
+                        </button>
+                    </li>
+                </template>
+            </ol>
+        </template>
+
+        <p x-show="filtered().length && !hotSpots().length" class="text-xs text-muted">No clusters in the visible area.
+            Pan or zoom to reveal more.</p>
+        <p x-show="!filtered().length" class="text-xs text-muted">No incidents to plot.</p>
+    </div>
+
     <fieldset>
         <legend class="label mb-2">Status</legend>
         <div class="space-y-1.5">
