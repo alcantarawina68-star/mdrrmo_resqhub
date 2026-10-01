@@ -126,7 +126,7 @@ Alpine.data('notificationBell', (initialUnread) => ({
     polling: false,
 
     init() {
-        this.endpoint = this.$root.dataset.unreadUrl;
+        this.endpoint = this.$root.dataset.feedUrl;
         this.readUrlTemplate = this.$root.dataset.readUrlTemplate;
         this.readAllUrl = this.$root.dataset.readAllUrl;
         this.csrfToken = this.$root.dataset.csrfToken;

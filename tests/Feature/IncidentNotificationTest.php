@@ -158,7 +158,7 @@ test('only operations roles can reach the notification pages', function () {
 
     foreach ([User::factory()->communityUser()->create(), User::factory()->responder()->create()] as $user) {
         actingAs($user)->get(route('notifications.index'))->assertForbidden();
-        actingAs($user)->getJson(route('notifications.unread-count'))->assertForbidden();
+        actingAs($user)->getJson(route('notifications.feed'))->assertForbidden();
         actingAs($user)->post(route('notifications.read-all'))->assertForbidden();
     }
 
@@ -183,14 +183,14 @@ test('the feed endpoint reports the unread count and the alerts behind it', func
     $incident = Incident::factory()->create();
 
     actingAs($admin)
-        ->getJson(route('notifications.unread-count'))
+        ->getJson(route('notifications.feed'))
         ->assertOk()
         ->assertExactJson(['unread' => 0, 'notifications' => []]);
 
     $admin->notify(new IncidentReported($incident));
 
     actingAs($admin)
-        ->getJson(route('notifications.unread-count'))
+        ->getJson(route('notifications.feed'))
         ->assertOk()
         ->assertJsonPath('unread', 1)
         ->assertJsonPath('notifications.0.title', 'New incident reported')
@@ -204,7 +204,7 @@ test('the feed endpoint reports the unread count and the alerts behind it', func
         ->assertExactJson(['unread' => 0]);
 
     actingAs($admin)
-        ->getJson(route('notifications.unread-count'))
+        ->getJson(route('notifications.feed'))
         ->assertOk()
         ->assertJsonPath('unread', 0)
         ->assertJsonPath('notifications.0.readAt', fn (?string $readAt) => $readAt !== null);
@@ -219,7 +219,7 @@ test('the feed endpoint is capped so the bell cannot grow without bound', functi
     }
 
     actingAs($admin)
-        ->getJson(route('notifications.unread-count'))
+        ->getJson(route('notifications.feed'))
         ->assertOk()
         ->assertJsonPath('unread', NotificationFeed::LIMIT + 4)
         ->assertJsonCount(NotificationFeed::LIMIT, 'notifications');
@@ -276,17 +276,17 @@ test('the alert bell is shown to operations roles only', function () {
     actingAs($admin)
         ->get(route('dashboard.incidents'))
         ->assertOk()
-        ->assertSee('data-unread-url="'.route('notifications.unread-count').'"', escape: false);
+        ->assertSee('data-feed-url="'.route('notifications.feed').'"', escape: false);
 
     actingAs(User::factory()->communityUser()->create())
         ->get(route('my-reports'))
         ->assertOk()
-        ->assertDontSee('data-unread-url', escape: false);
+        ->assertDontSee('data-feed-url', escape: false);
 
     actingAs(User::factory()->responder()->create())
         ->get(route('dashboard.incidents'))
         ->assertOk()
-        ->assertDontSee('data-unread-url', escape: false);
+        ->assertDontSee('data-feed-url', escape: false);
 });
 
 test('the notification history lists alerts with their incident link', function () {

@@ -7,7 +7,7 @@
     The initial payload is server-rendered into a JSON island rather than
     @js()-inlined into x-data, because @js() emits double quotes and would
     break the attribute — the same reason map-type-switch passes its layers
-    through JSON.parse. Same reason the endpoint, read template and CSRF token
+    through JSON.parse. Same reason the feed, read template and CSRF token
     live in data-* attributes: the only value inlined into x-data is the
     integer count, which is quote-free.
 
@@ -32,7 +32,7 @@
 
 @if ($showsNotifications)
     <div x-data="notificationBell(@js($unreadCount))"
-        data-unread-url="{{ route('notifications.unread-count') }}"
+        data-feed-url="{{ route('notifications.feed') }}"
         data-read-url-template="{{ route('notifications.read', ['notification' => '__ID__']) }}"
         data-read-all-url="{{ route('notifications.read-all') }}"
         data-csrf-token="{{ csrf_token() }}"

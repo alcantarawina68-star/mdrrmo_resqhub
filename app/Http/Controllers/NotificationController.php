@@ -27,7 +27,7 @@ class NotificationController extends Controller
      * Badge count plus the alerts behind it, so the dropdown renders from this
      * one response instead of asking for the list after the count.
      */
-    public function unreadCount(Request $request): JsonResponse
+    public function feed(Request $request): JsonResponse
     {
         return response()->json(NotificationFeed::summary($request->user()));
     }
