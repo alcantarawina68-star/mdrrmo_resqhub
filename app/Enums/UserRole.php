@@ -57,4 +57,22 @@ enum UserRole: string
     {
         return array_column(self::cases(), 'value');
     }
+
+    /**
+     * Roles allowed to correct the recorded details of an incident. Wider than
+     * operationsRoles() because responders in the field may fix a description,
+     * a landmark, or a misplaced pin, but it deliberately excludes every action
+     * that changes verification or status.
+     *
+     * @return array<int, string>
+     */
+    public static function incidentEditorRoles(): array
+    {
+        return [
+            self::Superadmin->value,
+            self::Admin->value,
+            self::Encoder->value,
+            self::Responder->value,
+        ];
+    }
 }

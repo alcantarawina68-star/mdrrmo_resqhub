@@ -55,10 +55,20 @@
                 <x-map-filters prefix="-mobile" />
             </div>
         </div>
+
+        <x-hotline-modal :hotline="$hotline" />
     </div>
 
     <script>
         document.addEventListener('alpine:init', () => {
+            const hotlineDismissed = () => {
+                try {
+                    return localStorage.getItem('resqhub:hide-hotline') === '1';
+                } catch (e) {
+                    return false;
+                }
+            };
+
             Alpine.data('mapPage', () => ({
                 incidents: @js($incidents),
                 types: @js($types),
@@ -72,8 +82,24 @@
                 map: null,
                 loading: true,
                 mapReady: false,
+                hotlineOpen: !hotlineDismissed(),
+                hotlineDontShow: false,
                 init() {
                     this.boot();
+                    if (this.hotlineOpen) {
+                        this.$nextTick(() => this.$refs.hotlineDialog?.focus());
+                    }
+                },
+                closeHotline() {
+                    if (this.hotlineDontShow) {
+                        try {
+                            localStorage.setItem('resqhub:hide-hotline', '1');
+                        } catch (e) {}
+                    }
+                    this.hotlineOpen = false;
+                },
+                trapHotline(event) {
+                    ResqHub.trapFocus(event, this.$refs.hotlineDialog);
                 },
                 boot() {
                     this.loading = true;

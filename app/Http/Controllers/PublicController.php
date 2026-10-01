@@ -6,6 +6,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Announcement;
 use App\Models\Incident;
+use App\Models\SiteSetting;
 use App\Support\CamalBarangays;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -38,6 +39,7 @@ class PublicController extends Controller
             'types' => IncidentType::grouped(),
             'statuses' => IncidentStatus::labels(),
             'barangays' => CamalBarangays::all(),
+            'hotline' => SiteSetting::value('hotline'),
         ]);
     }
 

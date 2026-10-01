@@ -263,11 +263,14 @@ class DashboardController extends Controller
 
     public function update(Request $request, Incident $incident): RedirectResponse
     {
+        // Coordinates are optional so a text-only correction (description,
+        // landmark, type) saves without having to round-trip the pin. The form
+        // pre-fills them, so a submitted value still has to be a valid pair.
         $data = $request->validate([
             'incident_type' => ['required', 'in:'.implode(',', IncidentType::values())],
             'description' => ['required', 'string', 'min:20', 'max:5000'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'location_label' => ['nullable', 'string', 'max:255'],
         ]);
 

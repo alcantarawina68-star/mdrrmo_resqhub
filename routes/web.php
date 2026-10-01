@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CallerController;
@@ -51,7 +52,6 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
         Route::post('/incidents/{incident}/verify', [DashboardController::class, 'verify'])->middleware('reauthenticate')->name('dashboard.incidents.verify');
         Route::post('/incidents/{incident}/notify', [DashboardController::class, 'notifyEmergencyContact'])->middleware('reauthenticate')->name('dashboard.incidents.notify');
         Route::post('/incidents/{incident}/status', [DashboardController::class, 'updateStatus'])->middleware('reauthenticate')->name('dashboard.incidents.status');
-        Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
 
         Route::middleware('role:superadmin,admin')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('dashboard.users');
@@ -69,6 +69,16 @@ Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,en
             Route::post('/sessions/{session}/terminate', [SessionManagementController::class, 'terminate'])->middleware('reauthenticate')->name('dashboard.sessions.terminate');
             Route::post('/sessions/users/{user}/logout', [SessionManagementController::class, 'logoutUser'])->middleware('reauthenticate')->name('dashboard.sessions.logout-user');
         });
+    });
+
+    /*
+     * Editing recorded incident details is a correction, not an operational
+     * decision: responders in the field may fix a description, a landmark, or a
+     * misplaced pin. Verify/status/notify above stay operations-only, so this
+     * gate is intentionally wider than that one.
+     */
+    Route::middleware('role:'.implode(',', UserRole::incidentEditorRoles()))->group(function () {
+        Route::post('/incidents/{incident}', [DashboardController::class, 'update'])->middleware('reauthenticate')->name('dashboard.incidents.update');
     });
 
     Route::middleware('role:admin,encoder')->group(function () {

@@ -1,4 +1,8 @@
 <x-layouts.dashboard title="Incident {{ $incident->incident_number }}">
+    @php
+        $canEditDetails = auth()->user()->hasRole(...\App\Enums\UserRole::incidentEditorRoles());
+    @endphp
+
     <a href="{{ route('dashboard.incidents') }}" class="btn btn-tertiary mb-4 !px-0">&larr; Back to incidents</a>
 
     <div class="grid gap-6 lg:grid-cols-5">
@@ -81,8 +85,11 @@
                 </div>
             @endif
 
-            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder))
-                <div class="card p-5">
+            @if ($canEditDetails)
+                <div
+                    class="card p-5"
+                    x-data="incidentEditForm(@js(['lat' => old('latitude', $incident->latitude), 'lng' => old('longitude', $incident->longitude)]))"
+                >
                     <p class="panel-title mb-3">Edit details</p>
                     <form method="POST" action="{{ route('dashboard.incidents.update', $incident) }}" class="grid gap-4 sm:grid-cols-2">
                         @csrf
@@ -97,6 +104,31 @@
                         <div class="field sm:col-span-2">
                             <label class="label" for="edit-description">Description</label>
                             <textarea id="edit-description" name="description" rows="4" class="textarea" minlength="20" required>{{ $incident->description }}</textarea>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="label mb-0" for="incident-edit-map">Location</label>
+                                <button type="button" class="btn btn-tertiary !px-1 !text-xs" :disabled="locating" @click="useCurrentLocation()">
+                                    Use current location
+                                </button>
+                            </div>
+                            <div id="incident-edit-map" class="mt-2 h-64 w-full rounded-lg border border-border bg-bg" role="application" aria-label="Map to correct the incident location"></div>
+                            <p class="mt-2 text-xs text-muted">Click the map to move the pin, drag it to fine&#8209;tune, or type the coordinates below.</p>
+                            <p class="mt-1 text-xs text-danger" x-show="geoError" x-text="geoError"></p>
+                        </div>
+                        <div class="field">
+                            <label class="label {{ $errors->has('latitude') ? 'text-danger' : '' }}" for="edit-latitude">Latitude</label>
+                            <input id="edit-latitude" type="number" name="latitude" class="input mono {{ $errors->has('latitude') ? 'border-danger focus:border-danger' : '' }}" step="any" min="-90" max="90" value="{{ old('latitude', $incident->latitude) }}" x-model="lat" @change="syncMarker" @error('latitude') aria-invalid="true" aria-describedby="edit-latitude-error" @enderror>
+                            @error('latitude')
+                                <p id="edit-latitude-error" class="text-xs font-medium text-danger" role="alert">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="field">
+                            <label class="label {{ $errors->has('longitude') ? 'text-danger' : '' }}" for="edit-longitude">Longitude</label>
+                            <input id="edit-longitude" type="number" name="longitude" class="input mono {{ $errors->has('longitude') ? 'border-danger focus:border-danger' : '' }}" step="any" min="-180" max="180" value="{{ old('longitude', $incident->longitude) }}" x-model="lng" @change="syncMarker" @error('longitude') aria-invalid="true" aria-describedby="edit-longitude-error" @enderror>
+                            @error('longitude')
+                                <p id="edit-longitude-error" class="text-xs font-medium text-danger" role="alert">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div class="sm:col-span-2">
                             <button type="submit" class="btn btn-secondary">Save changes</button>
@@ -211,6 +243,66 @@
                         'status_label' => $incident->status->label(),
                     ]));
                     setTimeout(() => map.map.invalidateSize(), 100);
+                },
+            }));
+
+            Alpine.data('incidentEditForm', (initial) => ({
+                lat: initial.lat ?? '',
+                lng: initial.lng ?? '',
+                picker: null,
+                locating: false,
+                geoError: '',
+                get hasPoint() {
+                    return this.lat !== '' && this.lng !== '' && this.lat !== null && this.lng !== null;
+                },
+                init() {
+                    const el = document.getElementById('incident-edit-map');
+                    if (!el) return;
+
+                    this.picker = ResqHub.createLocationPicker(el, {
+                        layers: @js(\App\Support\MapLayers::all()),
+                        center: this.hasPoint ? [Number(this.lat), Number(this.lng)] : undefined,
+                        zoom: 16,
+                        onChange: (latlng) => this.setPoint(latlng),
+                    });
+
+                    if (this.hasPoint) {
+                        this.picker.setPoint({ lat: Number(this.lat), lng: Number(this.lng) });
+                    }
+
+                    setTimeout(() => this.picker.map.invalidateSize(), 100);
+                },
+                setPoint(latlng) {
+                    this.lat = Number(latlng.lat.toFixed(7));
+                    this.lng = Number(latlng.lng.toFixed(7));
+                    this.geoError = '';
+                },
+                syncMarker() {
+                    if (!this.picker || !this.hasPoint) return;
+
+                    this.picker.setPoint({ lat: Number(this.lat), lng: Number(this.lng) });
+                },
+                useCurrentLocation() {
+                    if (!navigator.geolocation) {
+                        this.geoError = 'Geolocation is not supported by this browser. Please pin the map manually.';
+                        return;
+                    }
+
+                    this.locating = true;
+                    this.geoError = '';
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            this.setPoint({ lat: position.coords.latitude, lng: position.coords.longitude });
+                            this.picker?.setPoint({ lat: this.lat, lng: this.lng }, 16);
+                            this.locating = false;
+                        },
+                        () => {
+                            this.geoError = 'Unable to determine your location. Please pin the map manually.';
+                            this.locating = false;
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+                    );
                 },
             }));
         });
