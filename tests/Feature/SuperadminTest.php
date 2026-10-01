@@ -233,3 +233,23 @@ test('the sessions page renders device rows for every user', function () {
         ->assertSee('device-target')
         ->assertSee('Log out all devices');
 });
+
+test('the barangay official role can no longer be assigned', function () {
+    expect(UserRole::tryFrom('barangay_official'))->toBeNull()
+        ->and(UserRole::values())->not->toContain('barangay_official');
+
+    $superadmin = User::factory()->superadmin()->create();
+
+    $this->withSession(['auth.password_confirmed_at' => time()])
+        ->actingAs($superadmin)
+        ->post('/dashboard/users', [
+            'name' => 'Old Barangay Role',
+            'email' => 'barangay@example.com',
+            'password' => 'password',
+            'role' => 'barangay_official',
+            'status' => 'active',
+        ])
+        ->assertSessionHasErrors('role');
+
+    expect(User::where('email', 'barangay@example.com')->exists())->toBeFalse();
+});

@@ -9,7 +9,6 @@
             \App\Enums\UserRole::Superadmin,
             \App\Enums\UserRole::Admin,
             \App\Enums\UserRole::Encoder,
-            \App\Enums\UserRole::BarangayOfficial,
             \App\Enums\UserRole::Responder,
         );
     $navLinks = [

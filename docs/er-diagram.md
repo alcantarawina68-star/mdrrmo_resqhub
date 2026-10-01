@@ -17,7 +17,7 @@ erDiagram
         varchar email "VARCHAR(190) UNIQUE"
         timestamp email_verified_at
         varchar password
-        enum role "admin|encoder|barangay_official|responder|community_user"
+        enum role "admin|encoder|responder|community_user"
         varchar contact_number "VARCHAR(20)"
         varchar barangay "VARCHAR(100)"
         enum status "active|inactive|suspended"

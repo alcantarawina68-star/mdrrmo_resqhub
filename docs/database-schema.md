@@ -270,7 +270,6 @@ Laravel Sanctum API tokens.
 | --- | --- |
 | `admin` | Administrator |
 | `encoder` | Encoder / Dispatcher |
-| `barangay_official` | Barangay Official |
 | `responder` | Responder |
 | `community_user` | Community User |
 

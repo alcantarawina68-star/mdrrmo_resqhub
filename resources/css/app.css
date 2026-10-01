@@ -152,10 +152,6 @@
         @apply border-secondary/25 bg-secondary/10 text-secondary;
     }
 
-    .chip-barangay_official {
-        @apply border-warning/40 bg-warning/15 text-warning-fg;
-    }
-
     .chip-responder {
         @apply border-success/25 bg-success/10 text-success;
     }

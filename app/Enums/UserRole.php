@@ -7,7 +7,6 @@ enum UserRole: string
     case Superadmin = 'superadmin';
     case Admin = 'admin';
     case Encoder = 'encoder';
-    case BarangayOfficial = 'barangay_official';
     case Responder = 'responder';
     case CommunityUser = 'community_user';
 
@@ -17,7 +16,6 @@ enum UserRole: string
             self::Superadmin => 'Super Admin',
             self::Admin => 'Administrator',
             self::Encoder => 'Encoder / Dispatcher',
-            self::BarangayOfficial => 'Barangay Official',
             self::Responder => 'Responder',
             self::CommunityUser => 'Community User',
         };

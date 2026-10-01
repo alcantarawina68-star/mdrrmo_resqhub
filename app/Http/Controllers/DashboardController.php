@@ -44,8 +44,8 @@ class DashboardController extends Controller
         $today = Incident::whereDate('reported_at', today())->count();
 
         // The assignment workload only appears for the roles that can act on it.
-        // Barangay officials and responders see the same incident data, just
-        // without the chart they cannot use.
+        // Responders see the same incident data, just without the chart they
+        // cannot use.
         $runsOperations = $user->hasRole(UserRole::Admin, UserRole::Encoder);
 
         return view('dashboard.index', [

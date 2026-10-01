@@ -41,12 +41,6 @@ class DatabaseSeeder extends Seeder
             'contact_number' => '09171230003',
         ]);
 
-        $official = User::factory()->barangayOfficial()->create([
-            'name' => 'Barangay Official',
-            'email' => 'official@resqhub.ph',
-            'contact_number' => '09171230004',
-        ]);
-
         $communityUsers = User::factory()->count(12)->create();
 
         $reporters = collect([$admin, $encoder, ...$communityUsers]);

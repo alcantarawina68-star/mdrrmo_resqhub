@@ -42,7 +42,7 @@ Route::middleware(['auth', 'active', 'single-session'])->group(function () {
     Route::get('/my-reports', [IncidentController::class, 'myReports'])->name('my-reports');
 });
 
-Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,encoder,barangay_official,responder'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,encoder,responder'])->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/incidents', [DashboardController::class, 'incidents'])->name('dashboard.incidents');
     Route::get('/incidents/{incident}', [DashboardController::class, 'show'])->name('dashboard.incidents.show');

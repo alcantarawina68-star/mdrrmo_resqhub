@@ -64,11 +64,6 @@ class UserFactory extends Factory
         return $this->role(UserRole::Encoder);
     }
 
-    public function barangayOfficial(): static
-    {
-        return $this->role(UserRole::BarangayOfficial);
-    }
-
     public function responder(): static
     {
         return $this->role(UserRole::Responder);

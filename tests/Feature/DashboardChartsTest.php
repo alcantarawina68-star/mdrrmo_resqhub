@@ -18,7 +18,7 @@ test('operations roles see the assigned unit workload chart', function (UserRole
         ->assertSee('Unassigned');
 })->with([UserRole::Admin, UserRole::Encoder]);
 
-test('field roles see the shared charts but not the operations-only ones', function (UserRole $role) {
+test('responders see the shared charts but not the operations-only ones', function (UserRole $role) {
     Incident::factory()->underVerification()->create();
 
     actingAs(User::factory()->role($role)->create())
@@ -29,7 +29,7 @@ test('field roles see the shared charts but not the operations-only ones', funct
         ->assertSee('By source')
         ->assertSee('Top barangays')
         ->assertDontSee('Open incidents by assigned unit');
-})->with([UserRole::BarangayOfficial, UserRole::Responder]);
+})->with([UserRole::Responder]);
 
 test('every dashboard role still sees the same global incident totals', function (UserRole $role) {
     Incident::factory()->ongoing()->count(3)->create();
@@ -39,7 +39,7 @@ test('every dashboard role still sees the same global incident totals', function
         ->assertOk()
         ->assertSee('Incidents reported')
         ->assertDontSee('No incidents reported yet.');
-})->with([UserRole::Admin, UserRole::Encoder, UserRole::BarangayOfficial, UserRole::Responder]);
+})->with([UserRole::Admin, UserRole::Encoder, UserRole::Responder]);
 
 test('assigned unit workload counts only open incidents and flags unassigned ones', function () {
     Incident::factory()->ongoing()->assignedTo('MDRRMO')->count(2)->create();
