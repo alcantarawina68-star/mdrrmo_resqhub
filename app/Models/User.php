@@ -64,6 +64,16 @@ class User extends Authenticatable
         return in_array($this->role?->value, $expected, true);
     }
 
+    /**
+     * Whether this user belongs to an operations role, the audience for incident
+     * alerts. Reads the same enum helper as the route and Blade gates so the
+     * notification recipients cannot drift from who is allowed to act on them.
+     */
+    public function isOperationsRole(): bool
+    {
+        return $this->hasRole(...UserRole::operationsRoles());
+    }
+
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;

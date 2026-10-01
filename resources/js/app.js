@@ -98,6 +98,174 @@ Alpine.data('mapLayerSwitch', (layers) => ({
     },
 }));
 
+const NOTIFICATION_POLL_MS = 30000;
+
+/*
+ * The header alert bell: unread badge, dropdown of recent alerts, and the
+ * actions that read them.
+ *
+ * There is no realtime transport in this app (no broadcasting config, no Echo,
+ * no SSE), so the panel is kept current by polling the feed endpoint. It pauses
+ * while the tab is hidden and never has two requests in flight. A rising unread
+ * count raises a toast, which is what the toasts store was built for.
+ *
+ * The initial item list arrives server-rendered in a JSON island inside the
+ * component, so the dropdown is correct before the first poll rather than
+ * flashing empty.
+ */
+Alpine.data('notificationBell', (initialUnread) => ({
+    unread: initialUnread,
+    items: [],
+    open: false,
+    loaded: false,
+    endpoint: '',
+    readUrlTemplate: '',
+    readAllUrl: '',
+    csrfToken: '',
+    timer: null,
+    polling: false,
+
+    init() {
+        this.endpoint = this.$root.dataset.unreadUrl;
+        this.readUrlTemplate = this.$root.dataset.readUrlTemplate;
+        this.readAllUrl = this.$root.dataset.readAllUrl;
+        this.csrfToken = this.$root.dataset.csrfToken;
+
+        const island = this.$root.querySelector('[data-notification-items]');
+
+        try {
+            this.items = JSON.parse(island?.textContent || '[]');
+            this.loaded = true;
+        } catch {
+            this.items = [];
+        }
+
+        if (!this.endpoint) {
+            return;
+        }
+
+        this.timer = setInterval(() => {
+            if (!document.hidden) {
+                this.refresh();
+            }
+        }, NOTIFICATION_POLL_MS);
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.refresh();
+            }
+        });
+    },
+
+    destroy() {
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+    },
+
+    toggle() {
+        this.open = !this.open;
+
+        if (this.open) {
+            this.refresh();
+        }
+    },
+
+    async refresh() {
+        if (this.polling) {
+            return;
+        }
+
+        this.polling = true;
+
+        try {
+            const response = await fetch(this.endpoint, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            const newest = payload.notifications?.[0];
+
+            if (payload.unread > this.unread && newest && !newest.readAt) {
+                this.$store.toasts.add(newest.title, 'info');
+            }
+
+            this.unread = payload.unread;
+            this.items = payload.notifications ?? [];
+            this.loaded = true;
+        } catch {
+            /* a failed poll is not worth surfacing; the bell just goes stale */
+        } finally {
+            this.polling = false;
+        }
+    },
+
+    /**
+     * Opening an alert both reads it and follows it. Reading first means the
+     * next poll cannot re-toast the alert the user just dismissed.
+     */
+    async openItem(item) {
+        this.open = false;
+
+        if (!item.readAt) {
+            await this.markRead(item.id);
+        }
+
+        window.location.href = item.url;
+    },
+
+    async markRead(id) {
+        const response = await this.post(this.readUrlFor(id));
+
+        if (!response || !response.ok) {
+            return;
+        }
+
+        const now = new Date().toISOString();
+        this.items = this.items.map((item) => (
+            item.id === id ? { ...item, readAt: item.readAt ?? now } : item
+        ));
+        this.unread = Math.max(0, this.unread - 1);
+    },
+
+    async markAllRead() {
+        const response = await this.post(this.readAllUrl);
+
+        if (!response || !response.ok) {
+            return;
+        }
+
+        const now = new Date().toISOString();
+        this.items = this.items.map((item) => ({ ...item, readAt: item.readAt ?? now }));
+        this.unread = 0;
+    },
+
+    readUrlFor(id) {
+        return this.readUrlTemplate.replace('__ID__', encodeURIComponent(id));
+    },
+
+    async post(url) {
+        try {
+            return await fetch(url, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                credentials: 'same-origin',
+            });
+        } catch {
+            /* the server still has the truth; the next poll will correct us */
+            return null;
+        }
+    },
+}));
+
 Alpine.store('toasts', {
     items: [],
     add(message, type = 'info', duration = 4000) {

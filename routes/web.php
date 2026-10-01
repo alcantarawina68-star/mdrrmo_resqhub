@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CallerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordConfirmController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
@@ -41,6 +42,19 @@ Route::middleware(['auth', 'active', 'single-session'])->group(function () {
     Route::get('/report', [IncidentController::class, 'create'])->name('report.create');
     Route::post('/report', [IncidentController::class, 'store'])->name('report.store');
     Route::get('/my-reports', [IncidentController::class, 'myReports'])->name('my-reports');
+});
+
+/*
+ * In-app incident alerts. Operations roles only, because they are the audience
+ * IncidentService notifies, so the badge can never sit at zero for a role that
+ * will never receive one. The gate reads UserRole::operationsRoles() to match
+ * the Blade bell gate and the service recipients.
+ */
+Route::middleware(['auth', 'active', 'single-session', 'role:'.implode(',', UserRole::operationsRoles())])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
 });
 
 Route::middleware(['auth', 'active', 'single-session', 'role:superadmin,admin,encoder,responder'])->prefix('dashboard')->group(function () {

@@ -13,6 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/views/components/layouts/dashboard.blade.php | .ai/rules/layouts.md |
 | app/Http/Middleware/RequireReauthentication.php | .ai/rules/middleware.md |
 | database/migrations/** | .ai/rules/migrations.md |
+| app/Notifications/** | .ai/rules/notifications.md |
 | app/Support/Semaphore/** | .ai/rules/semaphore.md |
 | app/Services/ReportService.php | .ai/rules/services.md |
 | app/Support/MapLayers.php, app/Support/BarangayLocations.php | .ai/rules/support.md |

@@ -101,6 +101,7 @@
                 </div>
                 <h1 class="truncate text-lg font-semibold text-fg">{{ $title }}</h1>
                 <div class="flex items-center gap-2">
+                    <x-notification-bell />
                     <button type="button" class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface lg:hidden" aria-label="Toggle dark mode"
                         x-data @click="$store.darkMode.toggle()">
                         <svg x-show="!$store.darkMode.on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
@@ -150,28 +151,7 @@
         </button>
     </nav>
 
-    <div x-data x-cloak class="pointer-events-none fixed inset-x-0 top-20 z-[100] flex flex-col items-end gap-2 px-4" role="region" aria-label="Notifications" aria-live="polite">
-        <template x-for="toast in $store.toasts.items" :key="toast.id">
-            <div class="toast" :class="{
-                    'border-success/30 bg-success/10 text-success': toast.type === 'success',
-                    'border-danger/30 bg-danger/10 text-danger': toast.type === 'danger',
-                    'border-warning/40 bg-warning/15 text-warning-fg': toast.type === 'warning',
-                    'border-border bg-surface text-fg': toast.type === 'info',
-                }"
-                x-show="toast.visible"
-                x-transition:enter="transition duration-300 ease-out"
-                x-transition:enter-start="translate-x-full opacity-0"
-                x-transition:enter-end="translate-x-0 opacity-100"
-                x-transition:leave="transition duration-200 ease-in"
-                x-transition:leave-start="translate-x-0 opacity-100"
-                x-transition:leave-end="translate-x-full opacity-0">
-                <span class="flex-1 text-sm" x-text="toast.message"></span>
-                <button type="button" class="shrink-0 text-muted hover:text-fg" @click="$store.toasts.dismiss(toast.id)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-        </template>
-    </div>
+    <x-toasts />
 
     <script>
         document.addEventListener('alpine:init', () => {
