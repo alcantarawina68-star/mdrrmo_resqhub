@@ -3,6 +3,7 @@ import L from 'leaflet';
 import {
     createIncidentMap,
     createLocationPicker,
+    nearestBarangay,
     preferredBaseLayer,
     rememberBaseLayer,
     setMapBaseLayer,
@@ -37,6 +38,7 @@ window.L = L;
 window.ResqHub = {
     createIncidentMap,
     createLocationPicker,
+    nearestBarangay,
     preferredBaseLayer,
     setMapBaseLayer,
     trapFocus,
@@ -127,10 +129,12 @@ Alpine.store('bottomSheet', {
     show() {
         this.lastFocused = document.activeElement;
         this.open = true;
+        document.body.classList.add('bottom-sheet-open');
         Alpine.nextTick(() => document.getElementById('map-filter-sheet')?.focus());
     },
     close() {
         this.open = false;
+        document.body.classList.remove('bottom-sheet-open');
         this.lastFocused?.focus?.();
     },
 });

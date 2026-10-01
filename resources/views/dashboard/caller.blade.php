@@ -33,12 +33,13 @@
 
             <div class="field">
                 <label class="label" for="location_label">Barangay</label>
-                <select id="location_label" name="location_label" class="select">
+                <select id="location_label" name="location_label" class="select" x-model="locationLabel">
                     <option value="">Select barangay</option>
                     @foreach (\App\Support\CamalBarangays::all() as $barangay)
                         <option value="{{ $barangay }}" @selected(old('location_label') === $barangay)>{{ $barangay }}</option>
                     @endforeach
                 </select>
+                <p class="mt-1 text-xs text-muted" x-show="locationLabel" x-text="locationHint"></p>
             </div>
 
             <div class="field">
@@ -88,6 +89,11 @@
             Alpine.data('callerForm', () => ({
                 lat: '',
                 lng: '',
+                locationLabel: @js(old('location_label', '')),
+                barangayCentroids: @js(\App\Support\BarangayLocations::centroids()),
+                maxSuggestionMetres: @js(\App\Support\BarangayLocations::MAX_SUGGESTION_METRES),
+                suggestedBarangay: '',
+                barangayDistanceMetres: 0,
                 picker: null,
                 locating: false,
                 geoError: '',
@@ -103,6 +109,39 @@
                 setPoint(latlng) {
                     this.lat = latlng.lat.toFixed(7);
                     this.lng = latlng.lng.toFixed(7);
+                    this.suggestBarangay();
+                },
+                suggestBarangay() {
+                    const match = ResqHub.nearestBarangay(
+                        this.barangayCentroids,
+                        { lat: Number(this.lat), lng: Number(this.lng) },
+                        this.maxSuggestionMetres,
+                    );
+
+                    if (!match) {
+                        this.suggestedBarangay = '';
+                        return;
+                    }
+
+                    this.suggestedBarangay = match.name;
+                    this.barangayDistanceMetres = match.distance_metres;
+                    this.locationLabel = match.name;
+                },
+                get locationHint() {
+                    if (!this.locationLabel) return '';
+                    if (!this.suggestedBarangay) {
+                        return 'No barangay matched this pin — please pick one yourself.';
+                    }
+
+                    const distance = this.barangayDistanceMetres < 1000
+                        ? `${Math.round(this.barangayDistanceMetres)} m`
+                        : `${(this.barangayDistanceMetres / 1000).toFixed(1)} km`;
+
+                    if (this.suggestedBarangay !== this.locationLabel) {
+                        return `Pin is nearest to ${this.suggestedBarangay} (${distance}). Kept your choice: ${this.locationLabel}.`;
+                    }
+
+                    return `Filled in from the pin, ${distance} from the centre of ${this.locationLabel}. Change it if the pin looks wrong.`;
                 },
                 useMyLocation() {
                     if (!navigator.geolocation) {

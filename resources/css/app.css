@@ -251,12 +251,32 @@
         @apply text-primary;
     }
 
+    /*
+     * The scrim and sheet must both sit above .bottom-nav (z-50 in the app
+     * layout), otherwise the mobile tab bar paints over the open sheet and
+     * stays tappable through the scrim.
+     */
     .bottom-sheet-overlay {
-        @apply fixed inset-0 z-40 bg-black/50;
+        @apply fixed inset-0 z-[55] bg-black/50;
     }
 
+    /*
+     * overscroll-contain keeps a swipe inside the sheet from chaining to the
+     * document once the sheet hits its end.
+     */
     .bottom-sheet {
-        @apply fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface;
+        @apply fixed bottom-0 left-0 right-0 z-[60] max-h-[85vh] overscroll-contain overflow-y-auto rounded-t-2xl border-t border-border bg-surface;
+    }
+
+    /*
+     * The map is exactly one viewport tall, so the document can still scroll a
+     * little on mobile when the browser chrome collapses. Without this lock,
+     * that leftover scroll is what drags the map out from under the sheet.
+     * Toggled by the bottomSheet store in resources/js/app.js.
+     */
+    body.bottom-sheet-open {
+        overflow: hidden;
+        overscroll-behavior: none;
     }
 
     .bottom-sheet-handle {
@@ -282,6 +302,15 @@
 
 .leaflet-container {
     font-family: var(--font-sans);
+
+    /*
+     * Leaflet renders its own panes and controls at z-index 200-1000, far above
+     * the app chrome (sticky header z-30, mobile dropdowns z-40, tab bar
+     * z-50). Without its own stacking context a map that scrolls under that
+     * chrome paints on top of it. `isolation: isolate` keeps those z-indexes
+     * inside the map and applies to every map on every page.
+     */
+    isolation: isolate;
 }
 
 /*

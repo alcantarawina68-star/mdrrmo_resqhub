@@ -30,6 +30,21 @@ test('report and caller forms include a use-my-location button', function () {
     actingAs($admin)->get('/dashboard/caller')->assertOk()->assertSee('Use my location');
 });
 
+test('report and caller forms suggest a barangay from the pin but stay editable', function () {
+    $communityUser = User::factory()->communityUser()->create();
+    $admin = User::factory()->admin()->create();
+
+    foreach ([[$communityUser, '/report'], [$admin, '/dashboard/caller']] as [$user, $url]) {
+        actingAs($user)
+            ->get($url)
+            ->assertOk()
+            ->assertSee('x-model="locationLabel"', escape: false)
+            ->assertSee('ResqHub.nearestBarangay', escape: false)
+            ->assertSee('18.2812', escape: false)
+            ->assertSee('Change it if the pin looks wrong.', escape: false);
+    }
+});
+
 test('the users page uses the branded delete confirmation dialog', function () {
     $admin = User::factory()->admin()->create();
     $target = User::factory()->communityUser()->create();
@@ -71,12 +86,72 @@ test('destructive confirmation dialogs are focusable and described for screen re
         ->assertSee('@keydown.tab="trap($event)"', escape: false);
 });
 
+test('every map is contained so leaflet controls cannot cover the page chrome', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    preg_match('/\.leaflet-container\s*\{(.*?)\}/s', $css, $matches);
+
+    expect($matches[1] ?? '')->toContain('isolation: isolate');
+});
+
+test('map overlays never use a z-index that outranks the sticky header', function () {
+    $responder = User::factory()->responder()->create();
+    $admin = User::factory()->admin()->create();
+    $incident = Incident::factory()->ongoing()->create();
+
+    $pages = [
+        get('/'),
+        get("/incidents/{$incident->id}"),
+        actingAs($responder)->get('/report'),
+        actingAs($admin)->get('/dashboard/caller'),
+        actingAs($admin)->get("/dashboard/incidents/{$incident->id}"),
+    ];
+
+    $outranksHeader = [];
+
+    foreach ($pages as $page) {
+        preg_match_all('/z-\[(\d+)\]/', $page->getContent(), $found);
+
+        foreach ($found[1] ?? [] as $value) {
+            if ((int) $value >= 1000) {
+                $outranksHeader[] = $value;
+            }
+        }
+    }
+
+    expect($outranksHeader)->toBe([]);
+});
+
 test('the map filter sheet is an accessible labelled dialog', function () {
     get('/')
         ->assertOk()
         ->assertSee('id="map-filter-sheet"', escape: false)
         ->assertSee('aria-label="Map filters"', escape: false)
         ->assertSee('@click.self="$store.bottomSheet.close()"', escape: false);
+});
+
+test('the map filter sheet layers above the mobile tab bar and swallows overscroll', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    $rule = function (string $class) use ($css): string {
+        preg_match('/\.'.$class.'\s*\{(.*?)\}/s', $css, $matches);
+
+        return $matches[1] ?? '';
+    };
+
+    $zIndex = function (string $class) use ($rule): int {
+        preg_match('/z-\[?(\d+)\]?/', $rule($class), $matches);
+
+        return (int) ($matches[1] ?? -1);
+    };
+
+    $nav = $zIndex('bottom-nav');
+
+    expect($nav)->toBeGreaterThan(0)
+        ->and($zIndex('bottom-sheet-overlay'))->toBeGreaterThan($nav)
+        ->and($zIndex('bottom-sheet'))->toBeGreaterThan($zIndex('bottom-sheet-overlay'))
+        ->and($rule('bottom-sheet'))->toContain('overscroll-contain')
+        ->and($css)->toContain('body.bottom-sheet-open');
 });
 
 test('password fields expose a keyboard reachable visibility toggle', function () {

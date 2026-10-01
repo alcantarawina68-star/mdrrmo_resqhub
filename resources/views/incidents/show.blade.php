@@ -5,7 +5,7 @@
         <div class="grid gap-6 lg:grid-cols-2">
             <div class="card relative overflow-hidden">
                 <div id="detail-map" class="h-56 bg-bg sm:h-72 lg:h-[calc(100dvh-16rem)]" role="application" aria-label="Incident location map"></div>
-                <div class="absolute right-3 top-3 z-[1000]">
+                <div class="absolute right-3 top-3 z-10">
                     <x-map-type-switch label="Map imagery" />
                 </div>
             </div>

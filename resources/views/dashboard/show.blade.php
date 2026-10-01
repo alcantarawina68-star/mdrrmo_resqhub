@@ -19,7 +19,7 @@
 
             <div class="card relative overflow-hidden">
                 <div id="detail-map" class="h-64 bg-bg" role="application" aria-label="Incident location map"></div>
-                <div class="absolute right-3 top-3 z-[1000]">
+                <div class="absolute right-3 top-3 z-10">
                     <x-map-type-switch label="Map imagery" />
                 </div>
             </div>

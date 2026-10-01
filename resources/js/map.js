@@ -189,6 +189,41 @@ const HeatLayer = L.Layer.extend({
     },
 });
 
+const METRES_PER_DEGREE = 111320;
+
+/*
+ * Nearest barangay centroid for a dropped pin.
+ *
+ * This mirrors App\Support\BarangayLocations::nearest() exactly (same
+ * equirectangular approximation, same METRES_PER_DEGREE) so a pin resolves to
+ * the same barangay in the browser as it does in PHP. Callers pass
+ * BarangayLocations::MAX_SUGGESTION_METRES as `maxMetres` to get the behaviour
+ * of `suggest()` and null for a pin too far away to guess. Centroids are points,
+ * not boundaries, so callers must present the result as a suggestion.
+ */
+export function nearestBarangay(centroids, latlng, maxMetres = Infinity) {
+    const lngScale = Math.cos((latlng.lat * Math.PI) / 180);
+    let nearest = null;
+    let best = Infinity;
+
+    Object.entries(centroids).forEach(([name, centroid]) => {
+        const dLat = centroid.lat - latlng.lat;
+        const dLng = (centroid.lng - latlng.lng) * lngScale;
+        const distance = Math.sqrt(dLat * dLat + dLng * dLng);
+
+        if (distance < best) {
+            best = distance;
+            nearest = name;
+        }
+    });
+
+    if (nearest === null || best * METRES_PER_DEGREE > maxMetres) {
+        return null;
+    }
+
+    return { name: nearest, distance_metres: best * METRES_PER_DEGREE };
+}
+
 export function createLocationPicker(element, options = {}) {
     const map = L.map(element, {
         center: options.center ?? [18.275, 121.675],
