@@ -51,7 +51,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body>
+<body class="flex min-h-screen flex-col bg-bg text-fg">
     <header class="sticky top-0 z-40 border-b border-border bg-surface">
         <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6">
             <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-3 no-underline">
@@ -131,7 +131,7 @@
 
     <x-flash-messages />
 
-    <main>
+    <main class="flex flex-1 flex-col">
         {{ $slot }}
     </main>
 
@@ -163,7 +163,7 @@
 
     <x-toasts />
 
-    <footer @class(['border-t border-border bg-surface py-6 pb-24 lg:pb-6', 'mt-16' => $footerSpacing])>
+    <footer @class(['border-t border-border bg-surface py-6 pb-24 lg:pb-6', 'mt-auto' => !($footerSpacing === false), 'mt-16' => $footerSpacing === true])>
         <div class="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 text-xs text-muted sm:px-6 md:flex-row md:items-center md:justify-between">
             <p>ResQHub · {{ site_setting('agency_name') }} · {{ site_setting('municipality') }}</p>
             <p class="mono">Emergency hotline: {{ site_setting('hotline') }} · {{ site_setting('website') }}

@@ -22,8 +22,8 @@
                 </div>
                 <button type="submit" class="btn btn-secondary">Filter</button>
                 <div class="ml-auto flex items-center gap-2">
-                    <a href="{{ route('dashboard.users.export', request()->query()) }}" class="btn btn-tertiary">Export CSV</a>
-                    <a href="{{ route('dashboard.users.export.pdf', request()->query()) }}" class="btn btn-tertiary">Export PDF</a>
+                    <a href="{{ route('dashboard.users.export', request()->query()) }}" class="btn btn-primary">Export CSV</a>
+                    <a href="{{ route('dashboard.users.export.pdf', request()->query()) }}" class="btn btn-primary">Export PDF</a>
                 </div>
             </form>
 

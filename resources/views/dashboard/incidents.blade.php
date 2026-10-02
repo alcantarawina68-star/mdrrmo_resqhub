@@ -28,8 +28,8 @@
             </div>
             <div class="col-span-2 flex items-end gap-2 lg:col-span-1 lg:justify-end">
                 @if (auth()->user()->hasRole(...\App\Enums\UserRole::operationsRoles()))
-                    <a href="{{ route('dashboard.incidents.export', request()->query()) }}" class="btn btn-tertiary">Export CSV</a>
-                    <a href="{{ route('dashboard.incidents.export.pdf', request()->query()) }}" class="btn btn-tertiary">Export PDF</a>
+                    <a href="{{ route('dashboard.incidents.export', request()->query()) }}" class="btn btn-primary">Export CSV</a>
+                    <a href="{{ route('dashboard.incidents.export.pdf', request()->query()) }}" class="btn btn-primary">Export PDF</a>
                 @endif
             </div>
         </form>

@@ -7,8 +7,8 @@
                 <h2 class="text-base font-semibold text-fg">Published announcements</h2>
                 <div class="flex items-center gap-2">
                     <span class="mono text-xs text-muted">{{ $announcements->total() }} total</span>
-                    <a href="{{ route('dashboard.announcements.export') }}" class="btn btn-tertiary !px-2 !py-1 text-xs">Export CSV</a>
-                    <a href="{{ route('dashboard.announcements.export.pdf') }}" class="btn btn-tertiary !px-2 !py-1 text-xs">Export PDF</a>
+                    <a href="{{ route('dashboard.announcements.export') }}" class="btn btn-primary !px-2 !py-1 text-xs">Export CSV</a>
+                    <a href="{{ route('dashboard.announcements.export.pdf') }}" class="btn btn-primary !px-2 !py-1 text-xs">Export PDF</a>
                 </div>
             </div>
 
