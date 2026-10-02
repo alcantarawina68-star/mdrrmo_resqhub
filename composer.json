@@ -50,11 +50,12 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "npm install --ignore-scripts",
+            "cd ai-server && npm install",
             "npm run build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" \"node ai-server/index.js\" --names='server,queue,vite,ai'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

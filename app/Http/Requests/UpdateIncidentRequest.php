@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateIncidentRequest extends FormRequest
@@ -24,7 +23,6 @@ class UpdateIncidentRequest extends FormRequest
             'latitude' => ['sometimes', 'numeric', 'between:-90,90'],
             'longitude' => ['sometimes', 'numeric', 'between:-180,180'],
             'location_label' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'priority' => ['sometimes', 'string', 'in:'.implode(',', Priority::values())],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'assigned_unit' => ['sometimes', 'nullable', 'string', 'max:120'],
         ];

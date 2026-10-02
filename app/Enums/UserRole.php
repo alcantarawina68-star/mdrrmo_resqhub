@@ -7,7 +7,6 @@ enum UserRole: string
     case Superadmin = 'superadmin';
     case Admin = 'admin';
     case Encoder = 'encoder';
-    case BarangayOfficial = 'barangay_official';
     case Responder = 'responder';
     case CommunityUser = 'community_user';
 
@@ -17,7 +16,6 @@ enum UserRole: string
             self::Superadmin => 'Super Admin',
             self::Admin => 'Administrator',
             self::Encoder => 'Encoder / Dispatcher',
-            self::BarangayOfficial => 'Barangay Official',
             self::Responder => 'Responder',
             self::CommunityUser => 'Community User',
         };
@@ -58,5 +56,23 @@ enum UserRole: string
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
+
+    /**
+     * Roles allowed to correct the recorded details of an incident. Wider than
+     * operationsRoles() because responders in the field may fix a description,
+     * a landmark, or a misplaced pin, but it deliberately excludes every action
+     * that changes verification or status.
+     *
+     * @return array<int, string>
+     */
+    public static function incidentEditorRoles(): array
+    {
+        return [
+            self::Superadmin->value,
+            self::Admin->value,
+            self::Encoder->value,
+            self::Responder->value,
+        ];
     }
 }

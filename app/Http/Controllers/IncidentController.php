@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Http\Requests\StoreIncidentRequest;
 use App\Services\IncidentService;
 use App\Support\CamalBarangays;
+use App\Support\Reports\MyIncidentReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,8 +18,6 @@ class IncidentController extends Controller
     public function create(): View
     {
         return view('report.create', [
-            'types' => IncidentType::labels(),
-            'priorities' => Priority::labels(),
             'barangays' => CamalBarangays::all(),
             'canAssignUnit' => auth()->user()->hasRole(...UserRole::operationsRoles()),
         ]);
@@ -41,11 +38,12 @@ class IncidentController extends Controller
 
     public function myReports(Request $request): View
     {
-        $incidents = $request->user()
-            ->incidents()
-            ->latest('reported_at')
-            ->withCount('evidence')
-            ->paginate(10);
+        // The same query the export uses, so the list and the download can never
+        // disagree about which reports are in scope.
+        $incidents = (new MyIncidentReport)
+            ->query($request->only(MyIncidentReport::filters()), $request->user())
+            ->paginate(10)
+            ->withQueryString();
 
         return view('reports.my', compact('incidents'));
     }

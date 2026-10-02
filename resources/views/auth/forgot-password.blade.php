@@ -2,30 +2,18 @@
     <h1 class="text-xl font-semibold text-fg">Forgot password</h1>
     <p class="mt-1 text-sm text-muted">Enter your email and we'll send you a link to reset your password.</p>
 
-    @if (session('status'))
-        <div class="mt-4 border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary" role="status">
-            {{ session('status') }}
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="mt-4 border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
-            <ul class="list-inside list-disc space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    <x-status-message />
+    <x-error-summary />
 
     <form method="POST" action="{{ route('password.email') }}" class="mt-6 space-y-4">
         @csrf
 
         <div class="field">
             <label class="label" for="email">Email</label>
-            <input id="email" type="email" name="email" class="input @error('email') border-danger/60 @enderror" value="{{ old('email') }}" required autofocus autocomplete="email">
+            <input id="email" type="email" name="email" class="input @error('email') border-danger/60 @enderror" value="{{ old('email') }}" required autofocus autocomplete="email"
+                @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
             @error('email')
-                <span class="mt-1 block text-xs text-danger">{{ $message }}</span>
+                <span id="email-error" class="mt-1 block text-xs text-danger">{{ $message }}</span>
             @enderror
         </div>
 

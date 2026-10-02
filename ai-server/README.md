@@ -48,8 +48,9 @@ copy .env.example .env
 npm start
 ```
 
-The server listens on `http://127.0.0.1:8001` by default (`PORT` in `.env`). Keep it
-running in parallel with `php artisan serve` (Laravel on port 8000).
+The server listens on `http://127.0.0.1:8001` by default (`PORT` in `.env`). It is
+started automatically alongside Laravel and Vite by `composer run dev` (or run it
+standalone here with `npm start`).
 
 ## Verification
 

@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Incident;
 use App\Models\User;
 use App\Services\IncidentService;
 use App\Services\ReportService;
+use App\Support\Reports\IncidentReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -26,7 +26,9 @@ class DashboardController extends Controller
 
     public function index(Request $request): View
     {
-        if ($request->user()->isSuperadmin()) {
+        $user = $request->user();
+
+        if ($user->isSuperadmin()) {
             return view('dashboard.index', [
                 'analytics' => $this->superadminAnalytics(),
             ]);
@@ -42,7 +44,26 @@ class DashboardController extends Controller
 
         $today = Incident::whereDate('reported_at', today())->count();
 
-        return view('dashboard.index', compact('summary', 'latest', 'today'));
+        // The assignment workload only appears for the roles that can act on it.
+        // Responders see the same incident data, just without the chart they
+        // cannot use.
+        $runsOperations = $user->hasRole(UserRole::Admin, UserRole::Encoder);
+
+        return view('dashboard.index', [
+            'summary' => $summary,
+            'latest' => $latest,
+            'today' => $today,
+            'runsOperations' => $runsOperations,
+            'trend' => $this->reports->dailyTrend(30),
+            'units' => $runsOperations ? $this->reports->assignedUnitWorkload() : null,
+            'barangays' => collect($this->reports->barangayBreakdown())
+                ->take(6)
+                ->map(fn (array $row) => [
+                    'label' => $row['barangay'],
+                    'total' => $row['total'],
+                ])
+                ->all(),
+        ]);
     }
 
     /**
@@ -119,41 +140,54 @@ class DashboardController extends Controller
                     ->all(),
             ],
             'online_users' => $onlineUsers,
+            'signup_trend' => $this->signupTrend(),
         ];
+    }
+
+    /**
+     * Daily signups for the last 30 days, so the superadmin overview shows
+     * registration growth rather than a single cumulative number.
+     *
+     * @return array<int, array{date: string, label: string, total: int}>
+     */
+    private function signupTrend(int $days = 30): array
+    {
+        $start = now()->subDays($days - 1)->startOfDay();
+        $end = now()->endOfDay();
+
+        $rows = User::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $trend = [];
+
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $key = $date->format('Y-m-d');
+
+            $trend[] = [
+                'date' => $key,
+                'label' => $date->format('M d'),
+                'total' => (int) ($rows->get($key) ?? 0),
+            ];
+        }
+
+        return $trend;
     }
 
     public function incidents(Request $request): View
     {
-        $query = Incident::query()->with('reporter:id,name');
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->filled('type')) {
-            $query->where('incident_type', $request->input('type'));
-        }
-
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->input('priority'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($query) use ($search) {
-                $query->where('description', 'like', "%{$search}%")
-                    ->orWhere('location_label', 'like', "%{$search}%")
-                    ->orWhere('id', $search);
-            });
-        }
-
-        $incidents = $query->latest('reported_at')->paginate(15)->withQueryString();
+        // The same query the export uses, so the export is always exactly the
+        // filtered list the operator is looking at.
+        $incidents = (new IncidentReport)
+            ->query($request->only(IncidentReport::filters()))
+            ->paginate(15)
+            ->withQueryString();
 
         return view('dashboard.incidents', [
             'incidents' => $incidents,
             'statuses' => IncidentStatus::labels(),
-            'types' => IncidentType::labels(),
-            'priorities' => Priority::labels(),
         ]);
     }
 
@@ -216,13 +250,15 @@ class DashboardController extends Controller
 
     public function update(Request $request, Incident $incident): RedirectResponse
     {
+        // Coordinates are optional so a text-only correction (description,
+        // landmark, type) saves without having to round-trip the pin. The form
+        // pre-fills them, so a submitted value still has to be a valid pair.
         $data = $request->validate([
             'incident_type' => ['required', 'in:'.implode(',', IncidentType::values())],
             'description' => ['required', 'string', 'min:20', 'max:5000'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'location_label' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'in:'.implode(',', Priority::values())],
         ]);
 
         $this->incidents->updateDetails($request->user(), $incident, $data);

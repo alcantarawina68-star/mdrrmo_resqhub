@@ -1,33 +1,32 @@
 <?php
 
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
 use App\Models\User;
-use App\Services\ReportService;
+use App\Support\Reports\IncidentReport;
+use App\Support\Reports\ReportExporter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function Pest\Laravel\actingAs;
 
 test('the summary endpoint returns dashboard metrics', function () {
     $admin = User::factory()->admin()->create();
-    Incident::factory()->underVerification()->create(['incident_type' => IncidentType::Fire, 'priority' => Priority::Urgent]);
+    Incident::factory()->underVerification()->create(['incident_type' => IncidentType::Fire]);
     Incident::factory()->verified()->create();
     Incident::factory()->ongoing()->create();
-    Incident::factory()->resolved()->create();
+    Incident::factory()->closed()->create();
 
     actingAs($admin, 'sanctum')->getJson('/api/v1/reports/summary')
         ->assertStatus(200)
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.total', 4)
-        ->assertJsonPath('data.pending', 1)
+        ->assertJsonPath('data.under_verification', 1)
         ->assertJsonPath('data.active', 1)
-        ->assertJsonPath('data.resolved', 1)
+        ->assertJsonPath('data.closed', 1)
         ->assertJsonStructure([
             'data' => [
                 'by_status' => [['value', 'label', 'total']],
-                'by_type' => [['value', 'label', 'total']],
-                'by_priority' => [['value', 'label', 'total']],
+                'by_type' => [['label', 'types' => [['value', 'label', 'total']]]],
                 'by_source' => [['value', 'label', 'total']],
             ],
         ]);
@@ -91,7 +90,7 @@ test('the CSV export includes a BOM and column headers', function () {
         'location_label' => 'Dugo',
     ]);
 
-    $csv = app(ReportService::class)->exportCsv([]);
+    $csv = app(ReportExporter::class)->csvString(new IncidentReport, []);
 
     expect(str_starts_with($csv, "\xEF\xBB\xBF"))->toBeTrue();
     expect($csv)->toContain('Incident No.');

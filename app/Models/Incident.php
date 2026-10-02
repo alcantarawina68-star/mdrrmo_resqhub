@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use Database\Factories\IncidentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,7 +30,6 @@ class Incident extends Model
         'emergency_contact',
         'is_anonymous',
         'status',
-        'priority',
         'assigned_unit',
         'reported_at',
         'verified_at',
@@ -49,7 +47,6 @@ class Incident extends Model
             'source' => IncidentSource::class,
             'is_anonymous' => 'boolean',
             'status' => IncidentStatus::class,
-            'priority' => Priority::class,
             'reported_at' => 'datetime',
             'verified_at' => 'datetime',
             'resolved_at' => 'datetime',

@@ -16,6 +16,7 @@
     --color-accent: #c0392b;
     --color-success: #2e7d32;
     --color-warning: #f9a825;
+    --color-warning-fg: #7a5200;
     --color-danger: #c62828;
     --color-bg: #f5f6f7;
     --color-surface: #ffffff;
@@ -31,6 +32,7 @@
     --color-accent: #e74c3c;
     --color-success: #4caf50;
     --color-warning: #fbc02d;
+    --color-warning-fg: #f7cf5a;
     --color-danger: #ef5350;
     --color-bg: #0f1113;
     --color-surface: #1a1d21;
@@ -77,11 +79,11 @@
 }
 
 @utility btn {
-    @apply inline-flex h-11 items-center justify-center gap-2 border border-transparent px-4 text-sm font-medium no-underline transition-[background-color,border-color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-transparent px-4 text-sm font-medium no-underline transition-[background-color,border-color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-40;
 }
 
 @utility input {
-    @apply h-11 w-full border border-border bg-surface px-3 text-sm text-fg placeholder:text-muted focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-bg disabled:opacity-60;
+    @apply h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-fg placeholder:text-muted focus:border-primary disabled:cursor-not-allowed disabled:bg-bg disabled:opacity-60;
 }
 
 @layer components {
@@ -98,7 +100,7 @@
     }
 
     .btn-tertiary {
-        @apply btn h-auto border-transparent bg-transparent px-1 text-secondary hover:bg-bg hover:text-primary;
+        @apply btn h-auto min-h-9 border-transparent bg-transparent px-2 text-secondary hover:bg-bg hover:text-primary;
     }
 
     .field {
@@ -114,11 +116,11 @@
     }
 
     .textarea {
-        @apply w-full border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-primary focus:outline-none;
+        @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-primary;
     }
 
     .card {
-        @apply border border-border bg-surface shadow-[0_1px_2px_rgb(0_0_0_/_0.05)];
+        @apply rounded-lg border border-border bg-surface shadow-[0_1px_2px_rgb(0_0_0_/_0.05)];
     }
 
     .panel-title {
@@ -134,23 +136,51 @@
     }
 
     .chip {
-        @apply inline-flex items-center gap-1.5 border border-transparent px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.04em];
+        @apply inline-flex items-center gap-1.5 rounded-md border border-transparent px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.04em];
     }
 
+    /* User roles */
     .chip-superadmin {
         @apply border-primary/30 bg-primary/10 text-primary;
     }
 
-    .chip-verified,
-    .chip-resolved,
+    .chip-admin {
+        @apply border-accent/30 bg-accent/10 text-accent;
+    }
+
+    .chip-encoder {
+        @apply border-secondary/25 bg-secondary/10 text-secondary;
+    }
+
+    .chip-responder {
+        @apply border-success/25 bg-success/10 text-success;
+    }
+
+    .chip-community_user {
+        @apply border-border bg-bg text-muted;
+    }
+
+    /* User statuses */
     .chip-active {
         @apply border-success/25 bg-success/10 text-success;
     }
 
+    .chip-inactive {
+        @apply border-border bg-bg text-muted;
+    }
+
+    .chip-suspended {
+        @apply border-danger/25 bg-danger/10 text-danger;
+    }
+
+    /* Incident statuses */
+    .chip-verified {
+        @apply border-success/25 bg-success/10 text-success;
+    }
+
     .chip-ongoing,
-    .chip-under_verification,
-    .chip-new {
-        @apply border-warning/40 bg-warning/15 text-[#7a5200];
+    .chip-under_verification {
+        @apply border-warning/40 bg-warning/15 text-warning-fg;
     }
 
     .chip-closed,
@@ -158,23 +188,38 @@
         @apply border-danger/25 bg-danger/10 text-danger;
     }
 
-    .chip-low,
+    /* Severity */
     .chip-info {
         @apply border-secondary/25 bg-secondary/10 text-secondary;
     }
 
-    .chip-medium,
     .chip-caution {
-        @apply border-warning/40 bg-warning/15 text-[#7a5200];
+        @apply border-warning/40 bg-warning/15 text-warning-fg;
     }
 
-    .chip-high,
     .chip-urgent {
         @apply border-danger/25 bg-danger/10 text-danger;
     }
 
+    /* Announcement categories */
+    .chip-advisory {
+        @apply border-secondary/25 bg-secondary/10 text-secondary;
+    }
+
+    .chip-warning {
+        @apply border-warning/40 bg-warning/15 text-warning-fg;
+    }
+
+    .chip-safety_info {
+        @apply border-primary/30 bg-primary/10 text-primary;
+    }
+
+    .chip-incident_update {
+        @apply border-border bg-bg text-muted;
+    }
+
     .table-head {
-        @apply border-b border-border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-muted;
+        @apply border-b border-border bg-bg/60 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-muted;
     }
 
     .table-cell {
@@ -182,7 +227,7 @@
     }
 
     .nav-link {
-        @apply flex items-center gap-2 px-3 py-2 text-sm text-fg/80 transition-colors duration-150 hover:bg-bg hover:text-fg;
+        @apply flex items-center gap-2 rounded-md px-3 py-2 text-sm text-fg/80 transition-colors duration-150 hover:bg-bg hover:text-fg;
     }
 
     .nav-link-active {
@@ -190,7 +235,7 @@
     }
 
     .toast {
-        @apply pointer-events-auto flex w-full max-w-sm items-start gap-3 border border-border bg-surface p-4 shadow-lg;
+        @apply pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-border bg-surface p-4 shadow-lg;
     }
 
     .bottom-nav {
@@ -206,12 +251,32 @@
         @apply text-primary;
     }
 
+    /*
+     * The scrim and sheet must both sit above .bottom-nav (z-50 in the app
+     * layout), otherwise the mobile tab bar paints over the open sheet and
+     * stays tappable through the scrim.
+     */
     .bottom-sheet-overlay {
-        @apply fixed inset-0 z-40 bg-black/50;
+        @apply fixed inset-0 z-[55] bg-black/50;
     }
 
+    /*
+     * overscroll-contain keeps a swipe inside the sheet from chaining to the
+     * document once the sheet hits its end.
+     */
     .bottom-sheet {
-        @apply fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto border-t border-border bg-surface;
+        @apply fixed bottom-0 left-0 right-0 z-[60] max-h-[85vh] overscroll-contain overflow-y-auto rounded-t-2xl border-t border-border bg-surface;
+    }
+
+    /*
+     * The map is exactly one viewport tall, so the document can still scroll a
+     * little on mobile when the browser chrome collapses. Without this lock,
+     * that leftover scroll is what drags the map out from under the sheet.
+     * Toggled by the bottomSheet store in resources/js/app.js.
+     */
+    body.bottom-sheet-open {
+        overflow: hidden;
+        overscroll-behavior: none;
     }
 
     .bottom-sheet-handle {
@@ -237,10 +302,50 @@
 
 .leaflet-container {
     font-family: var(--font-sans);
+
+    /*
+     * Leaflet renders its own panes and controls at z-index 200-1000, far above
+     * the app chrome (sticky header z-30, mobile dropdowns z-40, tab bar
+     * z-50). Without its own stacking context a map that scrolls under that
+     * chrome paints on top of it. `isolation: isolate` keeps those z-indexes
+     * inside the map and applies to every map on every page.
+     */
+    isolation: isolate;
 }
 
-.dark .leaflet-container {
+/*
+ * Dark mode dims light base layers (Standard, Terrain); imagery is left
+ * untouched. The class is set from the active layer's `light` flag in
+ * `resources/js/map.js`.
+ */
+.dark .leaflet-container.map-tiles-light {
     filter: brightness(0.85) contrast(1.1);
+}
+
+.map-layer-switch {
+    @apply flex flex-wrap items-center gap-1 rounded-lg border border-border bg-surface/95 p-1 shadow-sm backdrop-blur;
+}
+
+.map-layer-switch-option {
+    @apply min-h-8 rounded-md px-3 text-xs font-medium text-muted transition-colors;
+    min-width: 44px;
+}
+
+.map-layer-switch-option:hover {
+    @apply bg-border/60 text-fg;
+}
+
+.map-layer-switch-option.is-active {
+    @apply bg-primary text-white;
+}
+
+.location-pin {
+    display: block;
+    width: 28px;
+    height: 36px;
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary) 55%, transparent 55%);
+    clip-path: polygon(50% 100%, 0% 42%, 0% 18%, 50% 0, 100% 18%, 100% 42%);
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .incident-marker {
@@ -267,21 +372,14 @@
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
-.incident-marker.is-resolved .shape {
+.incident-marker.is-closed .shape {
     background: var(--color-success);
     border-radius: 2px;
     opacity: 0.85;
 }
 
-.incident-marker.is-urgent {
-    border: 2px solid var(--color-danger);
-    border-radius: 9999px;
-    width: 30px;
-    height: 30px;
-}
-
-.incident-popup .leaflet-popup-content-wrapper {
-    border-radius: 0;
+    .incident-popup .leaflet-popup-content-wrapper {
+    border-radius: 0.5rem;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 
@@ -294,6 +392,67 @@
     margin: 12px 16px;
     font-size: 0.8125rem;
     line-height: 1.5;
+}
+
+.leaflet-heat-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.leaflet-heat-layer.is-hidden {
+    display: none;
+}
+
+.heat-switch {
+    @apply inline-flex cursor-pointer;
+}
+
+.heat-switch-track {
+    @apply relative block h-6 w-11 rounded-full border border-border bg-bg transition-colors;
+}
+
+.heat-switch input:checked + .heat-switch-track {
+    @apply border-primary bg-primary;
+}
+
+.heat-switch-knob {
+    @apply absolute left-0.5 top-0.5 h-[18px] w-[18px] rounded-full bg-white shadow transition-transform;
+}
+
+.heat-switch input:checked + .heat-switch-track .heat-switch-knob {
+    transform: translateX(22px);
+}
+
+.heat-switch input:focus-visible + .heat-switch-track {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.heat-legend {
+    height: 0.5rem;
+    border-radius: 0.375rem;
+    background: linear-gradient(90deg,
+        rgba(43, 108, 176, 0) 0%,
+        rgba(43, 108, 176, 0.55) 35%,
+        rgba(249, 168, 37, 0.6) 55%,
+        rgba(226, 95, 45, 0.7) 75%,
+        rgba(198, 40, 40, 0.85) 100%);
+}
+
+.heat-spots {
+    @apply space-y-1;
+}
+
+.heat-spot {
+    @apply flex w-full items-start gap-2 rounded-lg border border-border bg-bg px-2 py-1.5 text-left transition-colors;
+}
+
+.heat-spot:hover {
+    @apply bg-border/60;
 }
 
 .skeleton {

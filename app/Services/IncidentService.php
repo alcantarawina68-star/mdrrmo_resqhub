@@ -5,14 +5,20 @@ namespace App\Services;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Jobs\SendSms;
 use App\Models\Evidence;
 use App\Models\Incident;
 use App\Models\StatusLog;
 use App\Models\User;
+use App\Notifications\IncidentAssigned;
+use App\Notifications\IncidentNotification;
+use App\Notifications\IncidentReported;
+use App\Notifications\IncidentStatusChanged;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -53,6 +59,11 @@ class IncidentService
                 $autoVerified ? 'Incident submitted online and verified.' : 'Incident submitted online.',
             );
 
+            $this->notifyOperations(
+                new IncidentReported($incident, $autoVerified),
+                $reporter,
+            );
+
             return $incident;
         });
 
@@ -86,6 +97,11 @@ class IncidentService
                 $autoVerified ? 'Caller-based report encoded and verified.' : 'Caller-based report encoded.',
             );
 
+            $this->notifyOperations(
+                new IncidentReported($incident, $autoVerified),
+                $encoder,
+            );
+
             return $incident;
         });
 
@@ -104,8 +120,9 @@ class IncidentService
         }
 
         $newStatus = $approved ? IncidentStatus::Verified : IncidentStatus::Rejected;
+        $previousStatus = $incident->status;
 
-        $incident = DB::transaction(function () use ($verifier, $incident, $approved, $notes, $assignedUnit, $newStatus) {
+        $incident = DB::transaction(function () use ($verifier, $incident, $approved, $notes, $assignedUnit, $newStatus, $previousStatus) {
             $incident->update([
                 'status' => $newStatus,
                 'verified_at' => $approved ? now() : $incident->verified_at,
@@ -117,6 +134,11 @@ class IncidentService
                 $verifier,
                 $newStatus,
                 $notes ?: ($approved ? 'Incident verified.' : 'Incident rejected after verification.'),
+            );
+
+            $this->notifyOperations(
+                new IncidentStatusChanged($incident, $previousStatus, $newStatus),
+                $verifier,
             );
 
             return $incident;
@@ -133,16 +155,28 @@ class IncidentService
             throw new RuntimeException('Use the verification flow to reject an incident.');
         }
 
-        $resolvedStates = [IncidentStatus::Resolved, IncidentStatus::Closed];
+        $previousStatus = $incident->status;
 
-        $incident = DB::transaction(function () use ($actor, $incident, $status, $note, $resolvedStates) {
-            $incident->update([
+        $incident = DB::transaction(function () use ($actor, $incident, $status, $note, $previousStatus) {
+            $attributes = [
                 'status' => $status,
-                'verified_at' => $status !== IncidentStatus::New ? ($incident->verified_at ?? now()) : null,
-                'resolved_at' => in_array($status, $resolvedStates, true) ? now() : null,
-            ]);
+                'verified_at' => $incident->verified_at ?? now(),
+            ];
+
+            if ($status === IncidentStatus::Closed) {
+                $attributes['resolved_at'] = $incident->resolved_at ?? now();
+            }
+
+            $incident->update($attributes);
 
             $this->logStatus($incident, $actor, $status, $note);
+
+            if ($previousStatus !== $status) {
+                $this->notifyOperations(
+                    new IncidentStatusChanged($incident, $previousStatus, $status),
+                    $actor,
+                );
+            }
 
             return $incident;
         });
@@ -172,7 +206,9 @@ class IncidentService
 
     public function assignUnit(User $actor, Incident $incident, string $unit): Incident
     {
-        $incident = DB::transaction(function () use ($actor, $incident, $unit) {
+        $alreadyAssigned = $incident->assigned_unit === $unit;
+
+        $incident = DB::transaction(function () use ($actor, $incident, $unit, $alreadyAssigned) {
             $incident->update(['assigned_unit' => $unit]);
 
             $this->logStatus(
@@ -182,6 +218,10 @@ class IncidentService
                 "Assigned to: {$unit}.",
             );
 
+            if (! $alreadyAssigned) {
+                $this->notifyOperations(new IncidentAssigned($incident, $unit), $actor);
+            }
+
             return $incident;
         });
 
@@ -190,9 +230,36 @@ class IncidentService
         return $incident;
     }
 
+    /**
+     * Write an in-app alert for every active operations user.
+     *
+     * Recipients are the operations roles (admin, encoder, superadmin) via the
+     * same enum helper the route and Blade gates use. The actor is skipped so
+     * staff are not notified of their own clicks, and deactivated accounts are
+     * skipped so nobody is paged into a login they cannot use.
+     *
+     * Sent synchronously inside the caller's transaction: the database channel
+     * only inserts rows, and a notification that outlives a rolled-back change
+     * would be worse than a missing one.
+     */
+    private function notifyOperations(IncidentNotification $notification, User $actor): void
+    {
+        $recipients = User::query()
+            ->whereIn('role', UserRole::operationsRoles())
+            ->where('status', UserStatus::Active->value)
+            ->whereKeyNot($actor->getKey())
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        Notification::send($recipients, $notification);
+    }
+
     private function isOperationsRole(User $user): bool
     {
-        return in_array($user->role?->value, UserRole::operationsRoles(), true);
+        return $user->isOperationsRole();
     }
 
     private function attachEvidence(Incident $incident, ?UploadedFile $file): void

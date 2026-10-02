@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Jobs\SendSms;
 use App\Models\Evidence;
 use App\Models\Incident;
@@ -31,7 +30,6 @@ function reportPayload(array $overrides = []): array
         'description' => 'A suspicious fire at the market needs verification. Smoke was visible for hours.',
         'latitude' => 18.28,
         'longitude' => 121.68,
-        'priority' => Priority::High->value,
     ], $overrides);
 }
 

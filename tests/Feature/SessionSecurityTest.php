@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Announcement;
 use App\Models\Incident;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,204 @@ test('sensitive actions are allowed after re-authentication', function () {
 
     expect($response->getStatusCode())->toBe(302)
         ->and($response->headers->get('Location'))->not->toContain('confirm-password');
+});
+
+test('the pending action runs once the password is confirmed', function () {
+    $admin = User::factory()->admin()->create([
+        'password' => 'secret-password',
+    ]);
+
+    actingAs($admin);
+
+    $payload = [
+        'title' => 'Road closure advisory',
+        'content' => 'The national highway is closed near the bridge for repair work.',
+        'category' => 'advisory',
+        'severity' => 'info',
+    ];
+
+    // First click on Publish: no password confirmed yet, so this must challenge.
+    $this->withHeaders(['referer' => route('dashboard.announcements')])
+        ->post(route('dashboard.announcements.store'), $payload)
+        ->assertRedirect(route('password.confirm'));
+
+    expect(Announcement::count())->toBe(0);
+
+    // Entering the password must lead straight back to the publish itself,
+    // rather than returning the user to a page where they resubmit everything.
+    post('/confirm-password', ['password' => 'secret-password'])
+        ->assertRedirect(route('password.confirm.resume'));
+
+    get(route('password.confirm.resume'))
+        ->assertOk()
+        ->assertSee('action="/dashboard/announcements"', false);
+
+    // The resume page self-submits the deferred request to its original action.
+    post(route('dashboard.announcements.store'), $payload)
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Announcement published.');
+
+    expect(Announcement::count())->toBe(1)
+        ->and(Announcement::first()->title)->toBe('Road closure advisory');
+});
+
+test('a replayed action that redirects back lands on the page it was submitted from', function () {
+    $admin = User::factory()->admin()->create([
+        'password' => 'secret-password',
+    ]);
+
+    actingAs($admin);
+
+    $payload = [
+        'title' => 'Road closure advisory',
+        'content' => 'The national highway is closed near the bridge for repair work.',
+        'category' => 'advisory',
+        'severity' => 'info',
+    ];
+
+    $this->withHeaders(['referer' => route('dashboard.announcements')])
+        ->post(route('dashboard.announcements.store'), $payload)
+        ->assertRedirect(route('password.confirm'));
+
+    post('/confirm-password', ['password' => 'secret-password']);
+
+    get(route('password.confirm.resume'))->assertOk();
+
+    // The action is submitted from the resume page, so its own `back()` resolves
+    // to the resume page rather than to the announcements page.
+    $this->withHeaders(['referer' => route('password.confirm.resume')])
+        ->post(route('dashboard.announcements.store'), $payload)
+        ->assertRedirect(route('password.confirm.resume'));
+
+    expect(Announcement::count())->toBe(1);
+
+    // The action is already done, so the user must be returned to the page they
+    // submitted from with its flash message instead of a "nothing to finish" dead end.
+    get(route('password.confirm.resume'))
+        ->assertRedirect(route('dashboard.announcements'))
+        ->assertSessionHas('status', 'Announcement published.');
+});
+
+test('a replayed verification is not reported as an unfinished process', function () {
+    $encoder = User::factory()->encoder()->create([
+        'password' => 'secret-password',
+    ]);
+
+    $incident = Incident::factory()->create();
+
+    actingAs($encoder);
+
+    $payload = [
+        'action' => 'approve',
+        'notes' => 'Verified against the barangay hotline log.',
+        'assigned_unit' => 'MDRRMO Rescue 1',
+    ];
+
+    $this->withHeaders(['referer' => route('dashboard.incidents.show', $incident)])
+        ->post(route('dashboard.incidents.verify', $incident), $payload)
+        ->assertRedirect(route('password.confirm'));
+
+    post('/confirm-password', ['password' => 'secret-password']);
+
+    get(route('password.confirm.resume'))->assertOk();
+
+    $this->withHeaders(['referer' => route('password.confirm.resume')])
+        ->post(route('dashboard.incidents.verify', $incident), $payload)
+        ->assertRedirect(route('password.confirm.resume'));
+
+    get(route('password.confirm.resume'))
+        ->assertRedirect(route('dashboard.incidents.show', $incident));
+});
+
+test('a deferred request is only replayed once', function () {
+    $admin = User::factory()->admin()->create([
+        'password' => 'secret-password',
+    ]);
+
+    actingAs($admin);
+
+    $payload = [
+        'title' => 'Road closure advisory',
+        'content' => 'The national highway is closed near the bridge for repair work.',
+        'category' => 'advisory',
+        'severity' => 'info',
+    ];
+
+    $this->withHeaders(['referer' => route('dashboard.announcements')])
+        ->post(route('dashboard.announcements.store'), $payload)
+        ->assertRedirect(route('password.confirm'));
+
+    post('/confirm-password', ['password' => 'secret-password']);
+
+    get(route('password.confirm.resume'))->assertOk();
+
+    // A validation failure bounces the user back to the resume page. The payload
+    // is already spent, so it must not be resubmitted in a loop, and the user is
+    // forwarded to the form so the errors are shown where the fields are.
+    get(route('password.confirm.resume'))
+        ->assertRedirect(route('dashboard.announcements'));
+
+    expect(Announcement::count())->toBe(0);
+});
+
+test('the resume page explains itself when no request was ever deferred', function () {
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin);
+
+    get(route('password.confirm.resume'))
+        ->assertOk()
+        ->assertSee('Nothing to finish');
+});
+
+test('a deferred delete keeps its method spoofing', function () {
+    $admin = User::factory()->admin()->create([
+        'password' => 'secret-password',
+    ]);
+
+    $announcement = Announcement::create([
+        'user_id' => $admin->id,
+        'title' => 'Flood advisory',
+        'content' => 'Flooding is reported in the riverside barangays right now.',
+        'category' => 'warning',
+        'severity' => 'urgent',
+        'published_at' => now(),
+    ]);
+
+    actingAs($admin);
+
+    // The delete button posts with method spoofing, exactly as the Blade form does.
+    post(route('dashboard.announcements.destroy', $announcement), ['_method' => 'DELETE'])
+        ->assertRedirect(route('password.confirm'));
+
+    post('/confirm-password', ['password' => 'secret-password'])
+        ->assertRedirect(route('password.confirm.resume'));
+
+    get(route('password.confirm.resume'))
+        ->assertOk()
+        ->assertSee('name="_method" value="DELETE"', false);
+
+    post(route('dashboard.announcements.destroy', $announcement), ['_method' => 'DELETE'])
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Announcement deleted.');
+
+    expect(Announcement::count())->toBe(0);
+});
+
+test('a read-only challenge still returns the user to where they were', function () {
+    $admin = User::factory()->admin()->create([
+        'password' => 'secret-password',
+    ]);
+
+    actingAs($admin);
+
+    // A GET challenge has no deferred payload to replay.
+    session(['auth.redirect_to' => route('dashboard.announcements')]);
+
+    get(route('password.confirm'))->assertOk();
+
+    post('/confirm-password', ['password' => 'secret-password'])
+        ->assertRedirect(route('dashboard.announcements'));
 });
 
 test('the re-authentication window expires after 15 minutes', function () {

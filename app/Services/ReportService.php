@@ -5,12 +5,16 @@ namespace App\Services;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * Aggregations behind the operations dashboard and the Reports & Analytics
+ * page. Exporting those figures to CSV or PDF is ReportExporter's job, which
+ * keeps this service free of any response handling.
+ */
 class ReportService
 {
     /**
@@ -42,17 +46,12 @@ class ReportService
 
         return [
             'total' => $base->clone()->count(),
-            'pending' => $byStatus->get(IncidentStatus::UnderVerification->value, 0),
+            'under_verification' => $byStatus->get(IncidentStatus::UnderVerification->value, 0),
             'active' => $byStatus->get(IncidentStatus::Ongoing->value, 0),
-            'resolved' => $byStatus->get(IncidentStatus::Resolved->value, 0),
+            'closed' => $byStatus->get(IncidentStatus::Closed->value, 0),
             'by_status' => $this->labelsWithCounts($byStatus, IncidentStatus::labels()),
-            'by_type' => $this->labelsWithCounts(
+            'by_type' => $this->groupedTypeCounts(
                 $base->clone()->selectRaw('incident_type, COUNT(*) as total')->groupBy('incident_type')->pluck('total', 'incident_type'),
-                IncidentType::labels(),
-            ),
-            'by_priority' => $this->labelsWithCounts(
-                $base->clone()->selectRaw('priority, COUNT(*) as total')->groupBy('priority')->pluck('total', 'priority'),
-                Priority::labels(),
             ),
             'by_source' => $this->labelsWithCounts(
                 $base->clone()->selectRaw('source, COUNT(*) as total')->groupBy('source')->pluck('total', 'source'),
@@ -118,91 +117,84 @@ class ReportService
     }
 
     /**
-     * Build a CSV export of incidents matching the given filters.
+     * Open incidents per assigned unit, so workload is visible before work is
+     * reassigned. Anything still unassigned is appended and flagged.
+     *
+     * @return array<int, array{label: string, total: int, tone: string}>
      */
-    public function exportCsv(array $filters): string
+    public function assignedUnitWorkload(int $limit = 6): array
     {
-        $rows = $this->filteredIncidents($filters);
-
-        $handle = fopen('php://temp', 'r+');
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        fputcsv($handle, [
-            'Incident No.', 'Type', 'Priority', 'Status', 'Location', 'Barangay', 'Source',
-            'Reporter', 'Reported At', 'Verified At', 'Resolved At',
-        ]);
-
-        foreach ($rows as $incident) {
-            fputcsv($handle, [
-                $incident->incident_number,
-                $incident->incident_type?->label(),
-                $incident->priority?->label(),
-                $incident->status?->label(),
-                $incident->location_label,
-                $incident->location_label,
-                $incident->source?->label(),
-                $incident->is_anonymous ? 'Anonymous' : $incident->reporter?->name,
-                $incident->reported_at?->toDateTimeString(),
-                $incident->verified_at?->toDateTimeString(),
-                $incident->resolved_at?->toDateTimeString(),
+        $open = Incident::query()
+            ->whereIn('status', [
+                IncidentStatus::UnderVerification->value,
+                IncidentStatus::Ongoing->value,
             ]);
+
+        $assigned = $open->clone()
+            ->whereNotNull('assigned_unit')
+            ->where('assigned_unit', '!=', '')
+            ->selectRaw('assigned_unit, COUNT(*) as total')
+            ->groupBy('assigned_unit')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => (string) $row->assigned_unit,
+                'total' => (int) $row->total,
+                'tone' => 'primary',
+            ])
+            ->all();
+
+        $unassigned = $open->clone()
+            ->where(fn (Builder $query) => $query->whereNull('assigned_unit')->orWhere('assigned_unit', ''))
+            ->count();
+
+        if ($unassigned > 0) {
+            $assigned[] = [
+                'label' => 'Unassigned',
+                'total' => (int) $unassigned,
+                'tone' => 'danger',
+            ];
         }
 
-        rewind($handle);
-        $csv = stream_get_contents($handle);
-        fclose($handle);
-
-        return $csv;
+        return $assigned;
     }
 
     /**
-     * Build a PDF export of incidents matching the given filters.
+     * Incident type counts nested under their main category, in display order.
      *
-     * @param  array<int|string, mixed>  $filters
-     */
-    public function exportPdf(array $filters): \Barryvdh\DomPDF\PDF
-    {
-        $rows = $this->filteredIncidents($filters);
-
-        return Pdf::loadView('dashboard.reports-pdf', [
-            'incidents' => $rows,
-            'from' => $filters['from'] ?? null,
-            'to' => $filters['to'] ?? null,
-            'generatedAt' => now(),
-        ]);
-    }
-
-    /**
-     * Return incidents matching the given export filters.
+     * Legacy types are included so historical incidents still contribute to
+     * their category total, even though they can no longer be selected.
      *
-     * @param  array<int|string, mixed>  $filters
-     * @return \Illuminate\Database\Eloquent\Collection<int, Incident>
+     * @param  Collection<int|string, mixed>  $counts
+     * @return array<int, array{label: string, types: array<int, array{value: string, label: string, total: int}>}>
      */
-    private function filteredIncidents(array $filters)
+    private function groupedTypeCounts(Collection $counts): array
     {
-        $query = Incident::query()->with('reporter:id,name');
+        $grouped = [];
 
-        foreach ($filters as $column => $value) {
-            if (blank($value)) {
-                continue;
+        foreach (IncidentType::CATEGORIES as $category => $categoryLabel) {
+            $types = [];
+
+            foreach (IncidentType::cases() as $case) {
+                if ($case->category() !== $category) {
+                    continue;
+                }
+
+                $types[] = [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                    'total' => (int) ($counts->get($case->value) ?? 0),
+                ];
             }
 
-            if ($column === 'from') {
-                $query->where('reported_at', '>=', Carbon::parse($value)->startOfDay());
-
-                continue;
-            }
-
-            if ($column === 'to') {
-                $query->where('reported_at', '<=', Carbon::parse($value)->endOfDay());
-
-                continue;
-            }
-
-            $query->where($column, $value);
+            $grouped[] = [
+                'label' => $categoryLabel,
+                'types' => $types,
+            ];
         }
 
-        return $query->orderByDesc('reported_at')->get();
+        return $grouped;
     }
 
     /**

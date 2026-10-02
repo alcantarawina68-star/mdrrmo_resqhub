@@ -26,8 +26,6 @@ class IncidentResource extends JsonResource
             'source' => $this->source?->value,
             'status' => $this->status?->value,
             'status_label' => $this->status?->label(),
-            'priority' => $this->priority?->value,
-            'priority_label' => $this->priority?->label(),
             'assigned_unit' => $this->assigned_unit,
             'is_anonymous' => $this->is_anonymous,
             'caller_name' => $this->caller_name,

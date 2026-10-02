@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Enums\AnnouncementCategory;
 use App\Enums\IncidentStatus;
-use App\Enums\Priority;
 use App\Enums\Severity;
 use App\Models\Announcement;
 use App\Models\Incident;
@@ -42,12 +41,6 @@ class DatabaseSeeder extends Seeder
             'contact_number' => '09171230003',
         ]);
 
-        $official = User::factory()->barangayOfficial()->create([
-            'name' => 'Barangay Official',
-            'email' => 'official@resqhub.ph',
-            'contact_number' => '09171230004',
-        ]);
-
         $communityUsers = User::factory()->count(12)->create();
 
         $reporters = collect([$admin, $encoder, ...$communityUsers]);
@@ -55,9 +48,8 @@ class DatabaseSeeder extends Seeder
         $incidents = Incident::factory()->count(12)->create(['user_id' => $reporters->random()]);
         $incidents->push(...Incident::factory()->count(10)->verified()->create(['user_id' => $reporters->random()]));
         $incidents->push(...Incident::factory()->count(8)->ongoing()->create(['user_id' => $reporters->random()]));
-        $incidents->push(...Incident::factory()->count(8)->resolved()->create(['user_id' => $reporters->random()]));
-        $incidents->push(...Incident::factory()->count(4)->closed()->create(['user_id' => $reporters->random()]));
-        $incidents->push(...Incident::factory()->count(3)->rejected()->create(['user_id' => $reporters->random()]));
+        $incidents->push(...Incident::factory()->count(8)->closed()->create(['user_id' => $reporters->random()]));
+        $incidents->push(...Incident::factory()->count(4)->rejected()->create(['user_id' => $reporters->random()]));
 
         $incidents->each(function (Incident $incident) use ($admin, $encoder) {
             $actor = fake()->randomElement([$admin, $encoder]);
@@ -65,18 +57,17 @@ class DatabaseSeeder extends Seeder
 
             match ($incident->status) {
                 IncidentStatus::Verified, IncidentStatus::Ongoing => $this->seedStatusLog($incident, $actor, $incident->status),
-                IncidentStatus::Resolved, IncidentStatus::Closed => $this->seedStatusLog($incident, $actor, IncidentStatus::Verified, then: IncidentStatus::Resolved),
+                IncidentStatus::Closed => $this->seedStatusLog($incident, $actor, IncidentStatus::Verified, then: IncidentStatus::Closed),
                 IncidentStatus::Rejected => $this->seedStatusLog($incident, $actor, IncidentStatus::Rejected, 'Unverified report.'),
                 default => null,
             };
         });
 
-        $urgent = Incident::factory()->count(3)->ongoing()
-            ->priority(Priority::Urgent)
+        $assigned = Incident::factory()->count(3)->ongoing()
             ->assignedTo('Rescue 117')
             ->create(['user_id' => $reporters->random()]);
 
-        $urgent->each(fn (Incident $incident) => $this->seedStatusLog($incident, $encoder, IncidentStatus::Verified, then: IncidentStatus::Ongoing));
+        $assigned->each(fn (Incident $incident) => $this->seedStatusLog($incident, $encoder, IncidentStatus::Verified, then: IncidentStatus::Ongoing));
 
         Announcement::factory()->count(8)->create(['user_id' => $encoder->id]);
         Announcement::factory()->count(2)->expired()->create(['user_id' => $encoder->id]);
@@ -94,7 +85,7 @@ class DatabaseSeeder extends Seeder
         SmsMessage::insert([
             [
                 'phone' => '09171230002',
-                'message' => 'ResQHub: New typhoon_flood report (RQ-'.now()->year.'-1000) at Minanga. Verify and assign a unit.',
+                'message' => 'ResQHub: New typhoon report (RQ-'.now()->year.'-1000) at Minanga. Verify and assign a unit.',
                 'status' => 'sent',
                 'attempts' => 1,
                 'error' => null,

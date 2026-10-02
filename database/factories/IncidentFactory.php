@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
 use App\Models\User;
 use App\Support\CamalBarangays;
@@ -25,7 +24,7 @@ class IncidentFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'incident_type' => fake()->randomElement(IncidentType::cases()),
+            'incident_type' => fake()->randomElement(IncidentType::selectableCases()),
             'description' => fake()->paragraph(2),
             'latitude' => fake()->latitude(18.25, 18.30),
             'longitude' => fake()->longitude(121.65, 121.70),
@@ -33,7 +32,6 @@ class IncidentFactory extends Factory
             'source' => IncidentSource::Online,
             'is_anonymous' => false,
             'status' => IncidentStatus::UnderVerification,
-            'priority' => fake()->randomElement(Priority::cases()),
             'reported_at' => now()->subMinutes(fake()->numberBetween(5, 60 * 24 * 30)),
         ];
     }
@@ -67,18 +65,11 @@ class IncidentFactory extends Factory
         ]);
     }
 
-    public function resolved(): static
-    {
-        return $this->verified()->state(fn (array $attributes) => [
-            'status' => IncidentStatus::Resolved,
-            'resolved_at' => now(),
-        ]);
-    }
-
     public function closed(): static
     {
-        return $this->resolved()->state(fn (array $attributes) => [
+        return $this->verified()->state(fn (array $attributes) => [
             'status' => IncidentStatus::Closed,
+            'resolved_at' => now(),
         ]);
     }
 
@@ -87,13 +78,6 @@ class IncidentFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => IncidentStatus::Rejected,
             'verified_at' => now(),
-        ]);
-    }
-
-    public function priority(Priority $priority): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'priority' => $priority,
         ]);
     }
 

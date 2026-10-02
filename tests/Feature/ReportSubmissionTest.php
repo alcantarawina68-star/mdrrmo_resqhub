@@ -2,7 +2,6 @@
 
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
 use App\Models\User;
 
@@ -14,17 +13,15 @@ $onlinePayload = [
     'latitude' => 18.2756,
     'longitude' => 121.6756,
     'location_label' => 'Minanga',
-    'priority' => Priority::High->value,
     'contact_number' => '09171234567',
 ];
 
 $callerPayload = [
-    'incident_type' => IncidentType::TyphoonFlood->value,
+    'incident_type' => IncidentType::Flood->value,
     'description' => 'Rising floodwater entered the houses along the riverbank quickly.',
     'latitude' => 18.2756,
     'longitude' => 121.6756,
     'location_label' => 'Balogo',
-    'priority' => Priority::High->value,
     'caller_name' => 'Maria Santos',
     'caller_contact' => '09179876543',
 ];

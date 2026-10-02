@@ -1,10 +1,13 @@
 <x-layouts.app title="{{ $incident->incident_number }}">
-    <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
         <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to map</a>
 
         <div class="grid gap-6 lg:grid-cols-2">
-            <div class="border border-border bg-surface">
-                <div id="detail-map" class="h-56 bg-bg sm:h-72" role="application" aria-label="Incident location map"></div>
+            <div class="card relative overflow-hidden">
+                <div id="detail-map" class="h-56 bg-bg sm:h-72 lg:h-[calc(100dvh-16rem)]" role="application" aria-label="Incident location map"></div>
+                <div class="absolute right-3 top-3 z-10">
+                    <x-map-type-switch label="Map imagery" />
+                </div>
             </div>
 
             <div class="flex flex-col gap-6">
@@ -12,12 +15,11 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <h1 class="mono text-lg sm:text-xl">{{ $incident->incident_number }}</h1>
                         <x-status-chip :status="$incident->status" />
-                        <x-priority-badge :priority="$incident->priority" />
                     </div>
                     <h2 class="mt-2 text-xl font-semibold text-fg sm:text-2xl">{{ $incident->incident_type->label() }}</h2>
                 </div>
 
-                <div class="divide-y divide-border border border-border bg-surface">
+                <div class="divide-y divide-border rounded-lg border border-border bg-surface">
                     <div class="flex justify-between gap-4 px-4 py-3 text-sm">
                         <span class="text-muted">Location</span>
                         <span class="text-right font-medium">{{ $incident->location_label ?? 'Location pending' }}</span>
@@ -50,7 +52,7 @@
                 @if ($incident->evidence->isNotEmpty())
                     <div>
                         <h3 class="mb-2">Attached evidence</h3>
-                        <ul class="divide-y divide-border border border-border bg-surface">
+                        <ul class="divide-y divide-border rounded-lg border border-border bg-surface">
                             @foreach ($incident->evidence as $item)
                                 <li class="text-sm">
                                     <div class="flex items-start gap-4 px-4 py-3">
@@ -101,15 +103,14 @@
                 'latitude' => $incident->latitude,
                 'longitude' => $incident->longitude,
                 'status' => $incident->status->value,
-                'priority' => $incident->priority->value,
             ]);
 
             Alpine.data('detailMap', () => ({
                 init() {
                     const map = ResqHub.createIncidentMap(document.getElementById('detail-map'), {
+                        layers: @js(\App\Support\MapLayers::all()),
                         zoom: 15,
                         zoomControl: false,
-                        attributionControl: false,
                         showDetailsLink: false,
                     });
                     const marker = map.addIncident({ ...incident, status_label: '{{ $incident->status->label() }}' });

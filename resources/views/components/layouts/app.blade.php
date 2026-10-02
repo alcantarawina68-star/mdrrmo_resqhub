@@ -1,4 +1,29 @@
-@props(['title' => 'ResQHub'])
+@props([
+    'title' => 'ResQHub',
+    'footerSpacing' => true,
+])
+
+@php
+    $canUseOperations = auth()->check()
+        && auth()->user()->hasRole(
+            \App\Enums\UserRole::Superadmin,
+            \App\Enums\UserRole::Admin,
+            \App\Enums\UserRole::Encoder,
+            \App\Enums\UserRole::Responder,
+        );
+    $navLinks = [
+        ['label' => 'Live Map', 'href' => route('home'), 'active' => request()->routeIs('home'), 'desktop' => true],
+        ['label' => 'Advisories', 'href' => route('advisories'), 'active' => request()->routeIs('advisories'), 'desktop' => true],
+    ];
+    if (auth()->check()) {
+        $navLinks[] = ['label' => 'Submit Report', 'href' => route('report.create'), 'active' => request()->routeIs('report.create'), 'desktop' => false];
+        $navLinks[] = ['label' => 'My Reports', 'href' => route('my-reports'), 'active' => request()->routeIs('my-reports'), 'desktop' => true];
+    }
+    if ($canUseOperations) {
+        $navLinks[] = ['label' => 'Operations', 'href' => route('dashboard'), 'active' => request()->routeIs('dashboard*'), 'desktop' => true];
+    }
+    $desktopNavLinks = array_values(array_filter($navLinks, fn (array $link) => $link['desktop']));
+@endphp
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -10,35 +35,38 @@
     <meta name="description" content="ResQHub — live incident map and advisories from {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('darkMode');
+                var on = stored === null
+                    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                    : stored === 'true';
+                if (on) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body>
+<body class="flex min-h-screen flex-col bg-bg text-fg">
     <header class="sticky top-0 z-40 border-b border-border bg-surface">
         <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6">
             <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-3 no-underline">
-                <span class="flex h-9 w-9 items-center justify-center bg-primary text-sm font-bold tracking-tight text-white">RQ</span>
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold tracking-tight text-white">RQ</span>
                 <span class="leading-tight">
                     <span class="block text-base font-semibold text-fg">ResQHub</span>
                     <span class="block text-xs text-muted">{{ site_setting('agency_short_name') }}</span>
                 </span>
             </a>
 
-            <nav class="hidden items-center gap-1 md:flex" aria-label="Main">
-                <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'nav-link-active' : '' }}">Live Map</a>
-                <a href="{{ route('advisories') }}" class="nav-link {{ request()->routeIs('advisories') ? 'nav-link-active' : '' }}">Advisories</a>
-
-                @auth
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
-                        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard*') ? 'nav-link-active' : '' }}">Operations</a>
-                    @endif
-                @endauth
-            </nav>
+            <x-nav-links :links="$desktopNavLinks" class="hidden items-center gap-1 md:flex" />
 
             <div class="hidden items-center gap-2 md:flex">
                 @auth
                     <a href="{{ route('report.create') }}" class="btn btn-primary">Submit Report</a>
-                    <a href="{{ route('my-reports') }}" class="nav-link {{ request()->routeIs('my-reports') ? 'nav-link-active' : '' }}">My Reports</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="btn btn-tertiary">Log out</button>
@@ -48,7 +76,7 @@
                     <a href="{{ route('register') }}" class="btn btn-primary">Register</a>
                 @endauth
 
-                <button type="button" class="btn btn-tertiary" aria-label="Toggle dark mode"
+                <button type="button" class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface" aria-label="Toggle dark mode"
                     x-data @click="$store.darkMode.toggle()">
                     <svg x-show="!$store.darkMode.on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -57,10 +85,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                 </button>
+
+                <x-notification-bell />
             </div>
 
             <div class="flex items-center gap-2 md:hidden">
-                <button type="button" class="btn btn-tertiary !px-2" aria-label="Toggle dark mode"
+                <x-notification-bell />
+
+                <button type="button" class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface" aria-label="Toggle dark mode"
                     x-data @click="$store.darkMode.toggle()">
                     <svg x-show="!$store.darkMode.on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -70,8 +102,8 @@
                     </svg>
                 </button>
 
-                <button type="button" class="flex h-11 w-11 items-center justify-center border border-border bg-surface" aria-label="Open menu" aria-expanded="false"
-                    x-data :aria-expanded="$store.mobileMenu.open" @click="$store.mobileMenu.open = !$store.mobileMenu.open">
+                <button type="button" class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface" aria-label="Open menu" aria-expanded="false" aria-controls="app-mobile-menu"
+                    x-data :aria-expanded="$store.mobileMenu.open" @click.stop="$store.mobileMenu.open = !$store.mobileMenu.open">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
@@ -79,44 +111,27 @@
             </div>
         </div>
 
-        <div x-data x-show="$store.mobileMenu.open" x-cloak @keydown.escape.window="$store.mobileMenu.open = false" class="fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg md:hidden">
-            <div class="flex flex-col gap-1 px-4 py-3" @click="$store.mobileMenu.open = false">
-                <a href="{{ route('home') }}" class="nav-link">Live Map</a>
-                <a href="{{ route('advisories') }}" class="nav-link">Advisories</a>
+        <div id="app-mobile-menu" x-data x-show="$store.mobileMenu.open" x-cloak @keydown.escape.window="$store.mobileMenu.open = false" @click.outside="$store.mobileMenu.open = false" class="fixed inset-x-0 top-16 z-40 border-b border-border bg-surface shadow-lg md:hidden">
+            <div @click="$store.mobileMenu.open = false">
+                <x-nav-links :links="$navLinks" class="flex flex-col gap-1 px-4 py-3" />
                 @auth
-                    <a href="{{ route('report.create') }}" class="nav-link">Submit Report</a>
-                    <a href="{{ route('my-reports') }}" class="nav-link">My Reports</a>
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Superadmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Encoder, \App\Enums\UserRole::BarangayOfficial, \App\Enums\UserRole::Responder))
-                        <a href="{{ route('dashboard') }}" class="nav-link">Operations</a>
-                    @endif
-                    <form method="POST" action="{{ route('logout') }}" class="mt-1">
+                    <form method="POST" action="{{ route('logout') }}" class="px-4 pb-3">
                         @csrf
                         <button type="submit" class="btn btn-tertiary w-full justify-start">Log out</button>
                     </form>
                 @else
-                    <a href="{{ route('login') }}" class="btn btn-secondary mt-1">Log in</a>
-                    <a href="{{ route('register') }}" class="btn btn-primary mt-1">Register</a>
+                    <div class="flex flex-col gap-2 px-4 pb-3">
+                        <a href="{{ route('login') }}" class="btn btn-secondary w-full">Log in</a>
+                        <a href="{{ route('register') }}" class="btn btn-primary w-full">Register</a>
+                    </div>
                 @endauth
             </div>
         </div>
     </header>
 
-    @if (session('status'))
-        <div class="border-b border-success/30 bg-success/10 px-4 py-3 text-sm text-success" role="status">
-            <div class="mx-auto max-w-[1600px]">{{ session('status') }}</div>
-        </div>
-    @endif
+    <x-flash-messages />
 
-    @if ($errors->any())
-        <div class="border-b border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
-            <div class="mx-auto flex max-w-[1600px] items-start gap-2">
-                <span class="font-semibold">Something needs attention.</span>
-                <span>{{ $errors->first() }}</span>
-            </div>
-        </div>
-    @endif
-
-    <main class="pb-20 lg:pb-0">
+    <main class="flex flex-1 flex-col">
         {{ $slot }}
     </main>
 
@@ -146,30 +161,9 @@
         @endauth
     </nav>
 
-    <div x-data x-cloak class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-end gap-2 px-4">
-        <template x-for="toast in $store.toasts.items" :key="toast.id">
-            <div class="toast" :class="{
-                    'border-success/30 bg-success/10 text-success': toast.type === 'success',
-                    'border-danger/30 bg-danger/10 text-danger': toast.type === 'danger',
-                    'border-warning/40 bg-warning/15 text-[#7a5200]': toast.type === 'warning',
-                    'border-border bg-surface text-fg': toast.type === 'info',
-                }"
-                x-show="toast.visible"
-                x-transition:enter="transition duration-300 ease-out"
-                x-transition:enter-start="translate-x-full opacity-0"
-                x-transition:enter-end="translate-x-0 opacity-100"
-                x-transition:leave="transition duration-200 ease-in"
-                x-transition:leave-start="translate-x-0 opacity-100"
-                x-transition:leave-end="translate-x-full opacity-0">
-                <span class="flex-1 text-sm" x-text="toast.message"></span>
-                <button type="button" class="shrink-0 text-muted hover:text-fg" @click="$store.toasts.dismiss(toast.id)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-        </template>
-    </div>
+    <x-toasts />
 
-    <footer class="mt-16 border-t border-border bg-surface py-6 pb-24 lg:pb-6">
+    <footer @class(['border-t border-border bg-surface py-6 pb-24 lg:pb-6', 'mt-auto' => !($footerSpacing === false), 'mt-16' => $footerSpacing === true])>
         <div class="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 text-xs text-muted sm:px-6 md:flex-row md:items-center md:justify-between">
             <p>ResQHub · {{ site_setting('agency_name') }} · {{ site_setting('municipality') }}</p>
             <p class="mono">Emergency hotline: {{ site_setting('hotline') }} · {{ site_setting('website') }}

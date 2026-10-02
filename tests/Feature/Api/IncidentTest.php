@@ -2,7 +2,6 @@
 
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
-use App\Enums\Priority;
 use App\Models\Incident;
 use App\Models\User;
 
@@ -15,7 +14,6 @@ $validPayload = [
     'latitude' => 18.2756,
     'longitude' => 121.6756,
     'location_label' => 'Minanga',
-    'priority' => Priority::High->value,
     'contact_number' => '09171234567',
 ];
 
@@ -165,7 +163,7 @@ test('an operator can reject an incident', function () {
     expect($incident->refresh()->status)->toBe(IncidentStatus::Rejected);
 });
 
-test('a verified incident status can be updated to ongoing and resolved', function () {
+test('a verified incident status can be updated to ongoing and closed', function () {
     $admin = User::factory()->admin()->create();
     $incident = Incident::factory()->verified()->create();
 
@@ -177,15 +175,16 @@ test('a verified incident status can be updated to ongoing and resolved', functi
         ->assertStatus(200)
         ->assertJsonPath('data.status', IncidentStatus::Ongoing->value);
 
+    expect($incident->refresh()->resolved_at)->toBeNull();
+
     actingAs($admin, 'sanctum')
         ->patchJson("/api/v1/incidents/{$incident->id}/status", [
-            'status' => IncidentStatus::Resolved->value,
+            'status' => IncidentStatus::Closed->value,
         ])
         ->assertStatus(200)
-        ->assertJsonPath('data.status', IncidentStatus::Resolved->value);
+        ->assertJsonPath('data.status', IncidentStatus::Closed->value);
 
-    $incident->refresh();
-    expect($incident->resolved_at)->not->toBeNull();
+    expect($incident->refresh()->resolved_at)->not->toBeNull();
 });
 
 test('rejection through the status endpoint is blocked', function () {
