@@ -84,6 +84,19 @@
         </div>
     </div>
 
+    <div class="card mt-6 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="panel-title">SMS delivery log</p>
+                <p class="mt-1 text-sm text-muted">Every message the platform tried to send, with delivery status and failures.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('dashboard.sms.export') }}" class="btn btn-secondary">Export CSV</a>
+                <a href="{{ route('dashboard.sms.export.pdf') }}" class="btn btn-secondary">Export PDF</a>
+            </div>
+        </div>
+    </div>
+
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         <div class="card p-5">
             <p class="panel-title mb-4">By type</p>

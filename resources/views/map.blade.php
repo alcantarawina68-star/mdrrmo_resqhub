@@ -1,4 +1,26 @@
 <x-layouts.app title="Live Incident Map" :footer-spacing="false">
+    @php
+        $hotlineText = trim((string) ($hotline ?? site_setting('hotline')));
+        $hotlineDigits = preg_replace('/\D/', '', $hotlineText) ?? '';
+        $telHotline = $hotlineDigits === ''
+            ? ''
+            : (str_starts_with($hotlineText, '+') ? '+' . $hotlineDigits : $hotlineDigits);
+    @endphp
+    @if ($telHotline !== '')
+        <div class="border-b border-border bg-surface">
+            <div class="mx-auto flex max-w-[1600px] items-center justify-center px-4 py-2 sm:px-6">
+                <a href="tel:{{ $telHotline }}"
+                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fg hover:bg-surface/90 focus:outline-none focus:ring-2 focus:ring-primary/50 sm:px-4"
+                    aria-label="Call hotline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>Call Hotline</span>
+                    <span class="mono text-xs text-muted sm:text-sm">{{ $hotlineText }}</span>
+                </a>
+            </div>
+        </div>
+    @endif
     <div
         class="flex h-[calc(100dvh-4rem)] flex-col lg:flex-row"
         x-data="mapPage()"
@@ -22,7 +44,7 @@
             </div>
 
             <button type="button"
-                class="absolute right-4 top-4 z-[600] flex h-12 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium shadow-lg lg:hidden"
+                class="absolute right-4 top-4 z-10 flex h-12 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium shadow-lg lg:hidden"
                 x-data @click="$store.bottomSheet.toggle()" :aria-expanded="$store.bottomSheet.open" aria-controls="map-filter-sheet">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 <span>Filters</span>

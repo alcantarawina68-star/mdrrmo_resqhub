@@ -5,7 +5,22 @@
                 <h1>My Reports</h1>
                 <p class="mt-1 text-sm text-muted">Track the status of reports you submitted.</p>
             </div>
-            <a href="{{ route('report.create') }}" class="btn btn-primary">Submit a Report</a>
+            <div class="flex flex-wrap items-end gap-2">
+                <form method="GET" action="{{ route('my-reports') }}" class="flex items-end gap-2">
+                    <div class="field">
+                        <label class="label" for="my-from">From</label>
+                        <input id="my-from" type="date" name="from" class="input" value="{{ request('from') }}">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="my-to">To</label>
+                        <input id="my-to" type="date" name="to" class="input" value="{{ request('to') }}">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Apply</button>
+                </form>
+                <a href="{{ route('my-reports.export', request()->query()) }}" class="btn btn-tertiary">Export CSV</a>
+                <a href="{{ route('my-reports.export.pdf', request()->query()) }}" class="btn btn-tertiary">Export PDF</a>
+                <a href="{{ route('report.create') }}" class="btn btn-primary">Submit a Report</a>
+            </div>
         </div>
 
         @if ($incidents->isEmpty())

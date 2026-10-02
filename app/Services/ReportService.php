@@ -6,11 +6,15 @@ use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * Aggregations behind the operations dashboard and the Reports & Analytics
+ * page. Exporting those figures to CSV or PDF is ReportExporter's job, which
+ * keeps this service free of any response handling.
+ */
 class ReportService
 {
     /**
@@ -154,93 +158,6 @@ class ReportService
         }
 
         return $assigned;
-    }
-
-    /**
-     * Build a CSV export of incidents matching the given filters.
-     */
-    public function exportCsv(array $filters): string
-    {
-        $rows = $this->filteredIncidents($filters);
-
-        $handle = fopen('php://temp', 'r+');
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        fputcsv($handle, [
-            'Incident No.', 'Type', 'Status', 'Location', 'Barangay', 'Source',
-            'Reporter', 'Reported At', 'Verified At', 'Resolved At',
-        ]);
-
-        foreach ($rows as $incident) {
-            fputcsv($handle, [
-                $incident->incident_number,
-                $incident->incident_type?->label(),
-                $incident->status?->label(),
-                $incident->location_label,
-                $incident->location_label,
-                $incident->source?->label(),
-                $incident->is_anonymous ? 'Anonymous' : $incident->reporter?->name,
-                $incident->reported_at?->toDateTimeString(),
-                $incident->verified_at?->toDateTimeString(),
-                $incident->resolved_at?->toDateTimeString(),
-            ]);
-        }
-
-        rewind($handle);
-        $csv = stream_get_contents($handle);
-        fclose($handle);
-
-        return $csv;
-    }
-
-    /**
-     * Build a PDF export of incidents matching the given filters.
-     *
-     * @param  array<int|string, mixed>  $filters
-     */
-    public function exportPdf(array $filters): \Barryvdh\DomPDF\PDF
-    {
-        $rows = $this->filteredIncidents($filters);
-
-        return Pdf::loadView('dashboard.reports-pdf', [
-            'incidents' => $rows,
-            'from' => $filters['from'] ?? null,
-            'to' => $filters['to'] ?? null,
-            'generatedAt' => now(),
-        ]);
-    }
-
-    /**
-     * Return incidents matching the given export filters.
-     *
-     * @param  array<int|string, mixed>  $filters
-     * @return \Illuminate\Database\Eloquent\Collection<int, Incident>
-     */
-    private function filteredIncidents(array $filters)
-    {
-        $query = Incident::query()->with('reporter:id,name');
-
-        foreach ($filters as $column => $value) {
-            if (blank($value)) {
-                continue;
-            }
-
-            if ($column === 'from') {
-                $query->where('reported_at', '>=', Carbon::parse($value)->startOfDay());
-
-                continue;
-            }
-
-            if ($column === 'to') {
-                $query->where('reported_at', '<=', Carbon::parse($value)->endOfDay());
-
-                continue;
-            }
-
-            $query->where($column, $value);
-        }
-
-        return $query->orderByDesc('reported_at')->get();
     }
 
     /**

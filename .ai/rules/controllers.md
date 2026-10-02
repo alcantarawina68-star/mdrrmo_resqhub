@@ -2,6 +2,7 @@
 paths:
   - app/Http/Controllers/UserController.php
   - app/Http/Controllers/AuthController.php
+  - app/Http/Controllers/BackupController.php
 ---
 
 # Controllers
@@ -17,3 +18,6 @@ Password reset intentionally does NOT auto-login: it redirects to the login page
 
 ## Admin-initiated reset link guard + PasswordBroker alias
 UserController::sendResetLink is the admin-initiated password reset. It uses the Password broker facade aliased as PasswordBroker because the controller also imports the Password validation rule class (same short name — don't collide). A non-superadmin admin may not send a reset link to a superadmin; the route carries the reauthenticate middleware and lives in the role:superadmin,admin block.
+
+## Backup archives are streamed and deleted, never stored
+The archive is built in a private scratch dir, streamed, then deleted: nothing persists server side. Superadmin only, `reauthenticate` on the POST, and `Cache-Control: no-store`. The dump holds password hashes and contact numbers, so any UI for it must say so plainly.

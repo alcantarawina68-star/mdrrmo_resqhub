@@ -10,6 +10,7 @@ use App\Models\Incident;
 use App\Models\User;
 use App\Services\IncidentService;
 use App\Services\ReportService;
+use App\Support\Reports\IncidentReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -177,26 +178,12 @@ class DashboardController extends Controller
 
     public function incidents(Request $request): View
     {
-        $query = Incident::query()->with('reporter:id,name');
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->filled('type') && in_array($request->input('type'), IncidentType::values(), true)) {
-            $query->where('incident_type', $request->input('type'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($query) use ($search) {
-                $query->where('description', 'like', "%{$search}%")
-                    ->orWhere('location_label', 'like', "%{$search}%")
-                    ->orWhere('id', $search);
-            });
-        }
-
-        $incidents = $query->latest('reported_at')->paginate(15)->withQueryString();
+        // The same query the export uses, so the export is always exactly the
+        // filtered list the operator is looking at.
+        $incidents = (new IncidentReport)
+            ->query($request->only(IncidentReport::filters()))
+            ->paginate(15)
+            ->withQueryString();
 
         return view('dashboard.incidents', [
             'incidents' => $incidents,

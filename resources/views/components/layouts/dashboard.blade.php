@@ -9,6 +9,7 @@
         'dashboard.users',
         'dashboard.settings',
         'dashboard.sessions',
+        'dashboard.backup',
         'dashboard.announcements',
         'dashboard.reports',
     );
@@ -31,6 +32,7 @@
     }
     if ($isSuperadmin) {
         $navLinks[] = ['label' => 'Sessions', 'href' => route('dashboard.sessions'), 'active' => request()->routeIs('dashboard.sessions')];
+        $navLinks[] = ['label' => 'Backup', 'href' => route('dashboard.backup'), 'active' => request()->routeIs('dashboard.backup')];
     }
 @endphp
 

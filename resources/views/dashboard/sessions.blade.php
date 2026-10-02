@@ -2,6 +2,12 @@
     <div x-data="sessionsPage()">
         <x-page-header description="Monitor and end active device sessions across the platform. Ending a session logs that device out immediately." />
 
+        <div class="mb-4 flex items-center gap-2">
+            <a href="{{ route('dashboard.sessions.export') }}" class="btn btn-tertiary">Export CSV</a>
+            <a href="{{ route('dashboard.sessions.export.pdf') }}" class="btn btn-tertiary">Export PDF</a>
+            <p class="text-xs text-muted">Exports every signed-in device, including addresses and browsers.</p>
+        </div>
+
         @if ($sessions->isEmpty())
             <div class="card p-8 text-center text-sm text-muted">
                 There are no active sessions right now.

@@ -3,7 +3,8 @@
 use App\Enums\IncidentType;
 use App\Models\Incident;
 use App\Models\User;
-use App\Services\ReportService;
+use App\Support\Reports\IncidentReport;
+use App\Support\Reports\ReportExporter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function Pest\Laravel\actingAs;
@@ -89,7 +90,7 @@ test('the CSV export includes a BOM and column headers', function () {
         'location_label' => 'Dugo',
     ]);
 
-    $csv = app(ReportService::class)->exportCsv([]);
+    $csv = app(ReportExporter::class)->csvString(new IncidentReport, []);
 
     expect(str_starts_with($csv, "\xEF\xBB\xBF"))->toBeTrue();
     expect($csv)->toContain('Incident No.');
