@@ -34,6 +34,11 @@ class NotificationFeed
         return $user->unreadNotifications()->count();
     }
 
+    public static function feed(User $user): array
+    {
+        return self::summary($user);
+    }
+
     /**
      * @param  Collection<int, DatabaseNotification>  $notifications
      * @return array<int, array{id: string, title: string, body: string, url: string, readAt: ?string, createdAt: string, incidentNumber: ?string}>

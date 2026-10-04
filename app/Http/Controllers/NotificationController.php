@@ -29,7 +29,7 @@ class NotificationController extends Controller
      */
     public function feed(Request $request): JsonResponse
     {
-        return response()->json(NotificationFeed::summary($request->user()));
+        return response()->json(NotificationFeed::feed($request->user()));
     }
 
     /**
