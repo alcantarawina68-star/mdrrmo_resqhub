@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use finfo;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -25,11 +26,21 @@ class AiImageDetector
             return ['success' => false, 'error' => 'Image file not found.'];
         }
 
+        return $this->predictFromBytes($bytes, $mimeType);
+    }
+
+    /**
+     * Same as predict(), for callers that already hold the image in memory.
+     *
+     * @return array{success: true, label: string, confidence: float, predictions: array}|array{success: false, error: string}
+     */
+    public function predictFromBytes(string $bytes, ?string $mimeType = null): array
+    {
         $token = (string) config('services.huggingface.token', '');
 
         $request = Http::acceptJson()
             ->timeout((int) config('services.huggingface.timeout', 60))
-            ->withBody($bytes, $this->resolveMimeType($imagePath, $mimeType));
+            ->withBody($bytes, $this->resolveMimeType($bytes, $mimeType));
 
         if ($token !== '') {
             $request = $request->withToken($token);
@@ -91,13 +102,15 @@ class AiImageDetector
      * Evidence stores either a real mime type or, when detection failed, a bare
      * extension such as "png", which Hugging Face cannot accept as a Content-Type.
      */
-    private function resolveMimeType(string $imagePath, ?string $mimeType): string
+    private function resolveMimeType(string $bytes, ?string $mimeType): string
     {
         if ($mimeType !== null && $mimeType !== '' && str_contains($mimeType, '/')) {
             return $mimeType;
         }
 
-        return mime_content_type($imagePath) ?: 'application/octet-stream';
+        $detected = (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+
+        return is_string($detected) && $detected !== '' ? $detected : 'application/octet-stream';
     }
 
     /**

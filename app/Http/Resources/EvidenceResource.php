@@ -19,7 +19,7 @@ class EvidenceResource extends JsonResource
             'file_type' => $this->file_type,
             'original_name' => $this->original_name,
             'file_size' => $this->file_size,
-            'url' => $this->file_path ? asset('storage/'.$this->file_path) : null,
+            'url' => route('evidence.image', $this->id),
             'uploaded_at' => $this->uploaded_at?->toIso8601String(),
         ];
     }

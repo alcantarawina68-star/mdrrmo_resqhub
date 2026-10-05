@@ -20,7 +20,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class IncidentService
@@ -271,7 +270,8 @@ class IncidentService
             return;
         }
 
-        $path = $file->store('evidence', 'public');
+        $path = 'evidence/'.$file->hashName();
+        $contents = $file->get();
 
         $evidence = Evidence::create([
             'incident_id' => $incident->id,
@@ -282,15 +282,14 @@ class IncidentService
             'uploaded_at' => now(),
         ]);
 
-        $this->analyzeEvidence($evidence);
+        $evidence->file()->create(['content' => $contents]);
+
+        $this->analyzeEvidence($evidence, $contents);
     }
 
-    private function analyzeEvidence(Evidence $evidence): void
+    private function analyzeEvidence(Evidence $evidence, string $contents): void
     {
-        $result = app(AiImageDetector::class)->predict(
-            Storage::disk('public')->path($evidence->file_path),
-            $evidence->file_type,
-        );
+        $result = app(AiImageDetector::class)->predictFromBytes($contents, $evidence->file_type);
 
         if ($result['success'] !== true || ($isAi = $this->labelIsAi($result['label'] ?? '')) === null) {
             $error = $result['success'] === true ? 'Invalid AI detection response.' : $result['error'];

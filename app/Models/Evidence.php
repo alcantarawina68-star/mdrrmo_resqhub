@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Evidence extends Model
 {
+    use HasFactory;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -36,5 +40,14 @@ class Evidence extends Model
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
+    }
+
+    /**
+     * The image bytes live in the database, not on the public disk, so evidence
+     * renders without the storage symlink shared hosting often refuses to create.
+     */
+    public function file(): HasOne
+    {
+        return $this->hasOne(EvidenceFile::class);
     }
 }

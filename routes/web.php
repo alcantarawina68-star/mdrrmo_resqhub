@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CallerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EvidenceImageController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordConfirmController;
@@ -19,6 +20,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PublicController::class, 'map'])->name('home');
 Route::get('/advisories', [PublicController::class, 'advisories'])->name('advisories');
 Route::get('/incidents/{incident}', [PublicController::class, 'show'])->name('incidents.show');
+
+// Evidence bytes are read from the database rather than public/storage, so the
+// route is public like the file URLs it replaces: the public incident page shows
+// the same thumbnails.
+Route::get('/evidence/{evidence}/image', EvidenceImageController::class)->name('evidence.image');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
