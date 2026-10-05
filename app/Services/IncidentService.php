@@ -15,18 +15,21 @@ use App\Notifications\IncidentAssigned;
 use App\Notifications\IncidentNotification;
 use App\Notifications\IncidentReported;
 use App\Notifications\IncidentStatusChanged;
+use App\Support\AiImageDetector;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
-use Throwable;
 
 class IncidentService
 {
+    private const HUMAN_LABELS = ['human', 'real', 'original', 'photo', 'not_ai'];
+
+    private const AI_LABELS = ['ai', 'fake', 'generated', 'synthetic', 'digital'];
+
     public function __construct(
-        private readonly AiImageDetectionService $aiDetection,
         private readonly SmsService $sms,
     ) {}
 
@@ -284,37 +287,56 @@ class IncidentService
 
     private function analyzeEvidence(Evidence $evidence): void
     {
-        try {
-            $result = $this->aiDetection->detect(Storage::disk('public')->path($evidence->file_path));
+        $result = app(AiImageDetector::class)->predict(
+            Storage::disk('public')->path($evidence->file_path),
+            $evidence->file_type,
+        );
 
-            $evidence->update([
-                'ai_label' => $result['label'],
-                'ai_is_generated' => $result['is_ai_generated'],
-                'ai_score' => $result['score'],
-                'ai_analyzed_at' => now(),
-                'ai_error' => null,
-            ]);
-        } catch (RuntimeException $exception) {
+        if ($result['success'] !== true || ($isAi = $this->labelIsAi($result['label'] ?? '')) === null) {
+            $error = $result['success'] === true ? 'Invalid AI detection response.' : $result['error'];
+
             Log::error('AI image detection failed', [
                 'evidence_id' => $evidence->id,
-                'exception' => $exception->getMessage(),
+                'exception' => $error,
             ]);
 
             $evidence->update([
-                'ai_error' => $exception->getMessage(),
+                'ai_error' => $error,
                 'ai_analyzed_at' => now(),
-            ]);
-        } catch (Throwable $exception) {
-            Log::error('AI image detection failed unexpectedly', [
-                'evidence_id' => $evidence->id,
-                'exception' => $exception->getMessage(),
             ]);
 
-            $evidence->update([
-                'ai_error' => 'AI detection failed.',
-                'ai_analyzed_at' => now(),
-            ]);
+            return;
         }
+
+        $evidence->update([
+            'ai_label' => $result['label'],
+            'ai_is_generated' => $isAi,
+            'ai_score' => $result['confidence'],
+            'ai_analyzed_at' => now(),
+            'ai_error' => null,
+        ]);
+    }
+
+    /**
+     * Classify a Hugging Face label, or null when it matches neither side.
+     */
+    private function labelIsAi(string $label): ?bool
+    {
+        $haystack = strtolower($label);
+
+        foreach (self::HUMAN_LABELS as $humanLabel) {
+            if (str_contains($haystack, $humanLabel)) {
+                return false;
+            }
+        }
+
+        foreach (self::AI_LABELS as $aiLabel) {
+            if (str_contains($haystack, $aiLabel)) {
+                return true;
+            }
+        }
+
+        return null;
     }
 
     private function logStatus(Incident $incident, User $actor, IncidentStatus $newStatus, ?string $note = null): void

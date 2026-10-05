@@ -5,5 +5,5 @@ paths:
 
 # Ai Server
 
-## ai-server runs via composer run dev from repo root
-The AI detection microservice is started automatically by the root `composer run dev` script (added `node ai-server/index.js` to the concurrently command). ai-server/index.js resolves its `.env` via `import.meta.url`, so it is cwd-independent: always launch it as `node ai-server/index.js` from the repo root, never `cd ai-server && node index.js`. Its deps are installed by the composer `setup` script. If `AI detection failed` / `AI service unavailable` appears on evidence records, check that the ai-server process is actually running.
+## ai-server/ is unused — detection is in-process
+Laravel no longer proxies through the Node service. `App\Support\AiImageDetector::predict()` posts the raw image bytes straight to Hugging Face with `Http`, configured by `services.huggingface.*` (`HF_TOKEN`, `HF_API_URL`, `HF_TIMEOUT_SECONDS`), and returns `['success' => true, 'label', 'confidence', 'predictions']` or `['success' => false, 'error']`. `composer run dev` no longer starts `node ai-server/index.js` and `composer run setup` no longer installs its npm deps. The `ai-server/` folder is kept on disk only as leftover and is safe to delete; do not wire it back up.

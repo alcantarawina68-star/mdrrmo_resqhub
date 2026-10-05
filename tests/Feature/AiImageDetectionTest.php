@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
-const AI_DETECTION_URL = 'http://ai.internal';
+const AI_DETECTION_URL = 'https://router.huggingface.co/hf-inference/models/ai-vs-human';
 
 function configureAiDetection(): void
 {
     config([
-        'services.ai_detection.url' => AI_DETECTION_URL,
-        'services.ai_detection.token' => '',
-        'services.ai_detection.timeout' => 60,
+        'services.huggingface.url' => AI_DETECTION_URL,
+        'services.huggingface.token' => '',
+        'services.huggingface.timeout' => 60,
     ]);
 }
 
@@ -39,7 +39,7 @@ test('submitting a report with an image runs detection synchronously and saves t
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'ai_generated', 'confidence' => 0.98], 200),
+        AI_DETECTION_URL => Http::response([['label' => 'ai_generated', 'score' => 0.98]], 200),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -59,9 +59,9 @@ test('submitting a report with an image runs detection synchronously and saves t
     expect($evidence->ai_error)->toBeNull();
 
     Http::assertSent(function (Request $request) use ($image) {
-        return $request->url() === AI_DETECTION_URL.'/predict'
+        return $request->url() === AI_DETECTION_URL
             && $request->method() === 'POST'
-            && $request->hasFile('file', $image->getContent());
+            && $request->body() === $image->getContent();
     });
 });
 
@@ -71,7 +71,7 @@ test('the prediction marks human-generated images as real', function () {
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'human_generated', 'confidence' => 0.91], 200),
+        AI_DETECTION_URL => Http::response([['label' => 'human_generated', 'score' => 0.91]], 200),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -108,7 +108,7 @@ test('the submission still completes when the AI service is unavailable', functi
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => fn () => throw new ConnectionException('cURL error 7: Failed to connect to ai.internal port 80 after 1000 ms: Connection refused'),
+        AI_DETECTION_URL => fn () => throw new ConnectionException('cURL error 7: Failed to connect to hf.internal port 80 after 1000 ms: Connection refused'),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -117,7 +117,7 @@ test('the submission still completes when the AI service is unavailable', functi
         ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
         ->assertRedirect(route('my-reports'));
 
-    expect(Evidence::first()->ai_error)->toContain('AI service unavailable');
+    expect(Evidence::first()->ai_error)->toBe('Upstream inference failed: cURL error 7: Failed to connect to hf.internal port 80 after 1000 ms: Connection refused');
 });
 
 test('the submission still completes when the AI detection times out', function () {
@@ -126,7 +126,7 @@ test('the submission still completes when the AI detection times out', function 
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => fn () => throw new ConnectionException('cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received'),
+        AI_DETECTION_URL => fn () => throw new ConnectionException('cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received'),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -144,7 +144,7 @@ test('a malformed AI response is handled safely', function () {
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => Http::response('not a json body', 200),
+        AI_DETECTION_URL => Http::response('not a json body', 200),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -153,7 +153,7 @@ test('a malformed AI response is handled safely', function () {
         ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
         ->assertRedirect(route('my-reports'));
 
-    expect(Evidence::first()->ai_error)->toContain('Invalid AI detection response');
+    expect(Evidence::first()->ai_error)->toBe('Hugging Face returned non-JSON (HTTP 200).');
 });
 
 test('an unsuccessful AI response is recorded as failed', function () {
@@ -162,7 +162,7 @@ test('an unsuccessful AI response is recorded as failed', function () {
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => Http::response('Upstream model error', 503),
+        AI_DETECTION_URL => Http::response(['error' => 'Upstream model error'], 503),
     ]);
 
     $user = User::factory()->communityUser()->create();
@@ -171,7 +171,7 @@ test('an unsuccessful AI response is recorded as failed', function () {
         ->post(route('report.store'), reportPayload(['evidence' => UploadedFile::fake()->create('scene.png', 100, 'image/png')]))
         ->assertRedirect(route('my-reports'));
 
-    expect(Evidence::first()->ai_error)->toContain('AI detection failed (HTTP 503)');
+    expect(Evidence::first()->ai_error)->toBe('Hugging Face error (HTTP 503): Upstream model error');
 });
 
 test('an unauthenticated user cannot submit a report', function () {
@@ -189,7 +189,7 @@ test('non-AI jobs still run after a report submission', function () {
     Storage::fake('public');
     Http::preventStrayRequests();
     Http::fake([
-        AI_DETECTION_URL.'/predict' => Http::response(['success' => true, 'label' => 'ai_generated', 'confidence' => 0.98], 200),
+        AI_DETECTION_URL => Http::response([['label' => 'ai_generated', 'score' => 0.98]], 200),
     ]);
 
     $user = User::factory()->communityUser()->create();

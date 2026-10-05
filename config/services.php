@@ -25,10 +25,10 @@ return [
         ],
     ],
 
-    'ai_detection' => [
-        'url' => env('AI_DETECTION_URL'),
-        'token' => env('AI_DETECTION_TOKEN'),
-        'timeout' => env('AI_DETECTION_TIMEOUT', 60),
+    'huggingface' => [
+        'url' => env('HF_API_URL', 'https://router.huggingface.co/hf-inference/models/dima806/ai_vs_human_generated_image_detection'),
+        'token' => env('HF_TOKEN'),
+        'timeout' => env('HF_TIMEOUT_SECONDS', 60),
     ],
 
     'postmark' => [
