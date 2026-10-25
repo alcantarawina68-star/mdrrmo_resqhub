@@ -8,9 +8,14 @@ use function Pest\Laravel\get;
 
 test('public pages are accessible to guests', function () {
     get('/')->assertOk();
-    get('/advisories')->assertOk();
+    get('/advisories')->assertRedirect('/');
     get('/login')->assertOk();
-    get('/register')->assertOk();
+    get('/register')->assertNotFound();
+});
+
+test('guest reporting is public and the confirmation page needs a submission', function () {
+    get('/report')->assertOk();
+    get('/report/submitted')->assertRedirect(route('home'));
 });
 
 test('a publicly visible incident detail page renders', function () {
@@ -28,7 +33,6 @@ test('a non-public incident detail page returns 404', function () {
 });
 
 test('guests are redirected to login for protected pages', function () {
-    get('/report')->assertRedirect(route('login'));
     get('/my-reports')->assertRedirect(route('login'));
     get('/dashboard')->assertRedirect(route('login'));
 });
@@ -81,5 +85,5 @@ test('an admin can export the report as PDF and CSV', function () {
 test('an inactive user is redirected from authenticated pages', function () {
     $user = User::factory()->inactive()->create();
 
-    actingAs($user)->get('/report')->assertRedirect(route('login'));
+    actingAs($user)->get('/my-reports')->assertRedirect(route('login'));
 });

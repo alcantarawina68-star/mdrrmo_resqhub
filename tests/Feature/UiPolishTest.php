@@ -11,7 +11,7 @@ test('guest error pages are branded and offer a way back', function () {
     get('/this-page-does-not-exist')
         ->assertNotFound()
         ->assertSee('Page not found')
-        ->assertSee('Back to live map');
+        ->assertSee('Submit a report');
 
     $responder = User::factory()->responder()->create();
 
@@ -19,7 +19,7 @@ test('guest error pages are branded and offer a way back', function () {
         ->get('/dashboard/users')
         ->assertForbidden()
         ->assertSee('Access denied')
-        ->assertSee('Back to live map');
+        ->assertSee('Submit a report');
 });
 
 test('report and caller forms include a use-my-location button', function () {
@@ -54,13 +54,6 @@ test('the users page uses the branded delete confirmation dialog', function () {
         ->assertOk()
         ->assertSee('delete-user-dialog-title')
         ->assertSee('Delete user');
-});
-
-test('the live map shows pin details in the marker popup only', function () {
-    get('/')
-        ->assertOk()
-        ->assertDontSee('Close details')
-        ->assertDontSee('x-show="selected"');
 });
 
 test('mobile navigation menus stay pinned to the sticky header when scrolling', function () {
@@ -120,38 +113,6 @@ test('map overlays never use a z-index that outranks the sticky header', functio
     }
 
     expect($outranksHeader)->toBe([]);
-});
-
-test('the map filter sheet is an accessible labelled dialog', function () {
-    get('/')
-        ->assertOk()
-        ->assertSee('id="map-filter-sheet"', escape: false)
-        ->assertSee('aria-label="Map filters"', escape: false)
-        ->assertSee('@click.self="$store.bottomSheet.close()"', escape: false);
-});
-
-test('the map filter sheet layers above the mobile tab bar and swallows overscroll', function () {
-    $css = file_get_contents(resource_path('css/app.css'));
-
-    $rule = function (string $class) use ($css): string {
-        preg_match('/\.'.$class.'\s*\{(.*?)\}/s', $css, $matches);
-
-        return $matches[1] ?? '';
-    };
-
-    $zIndex = function (string $class) use ($rule): int {
-        preg_match('/z-\[?(\d+)\]?/', $rule($class), $matches);
-
-        return (int) ($matches[1] ?? -1);
-    };
-
-    $nav = $zIndex('bottom-nav');
-
-    expect($nav)->toBeGreaterThan(0)
-        ->and($zIndex('bottom-sheet-overlay'))->toBeGreaterThan($nav)
-        ->and($zIndex('bottom-sheet'))->toBeGreaterThan($zIndex('bottom-sheet-overlay'))
-        ->and($rule('bottom-sheet'))->toContain('overscroll-contain')
-        ->and($css)->toContain('body.bottom-sheet-open');
 });
 
 test('password fields expose a keyboard reachable visibility toggle', function () {

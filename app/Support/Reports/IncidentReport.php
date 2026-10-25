@@ -7,6 +7,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
 use App\Models\User;
+use App\Support\CamalBarangays;
 use App\Support\Reports\Concerns\AppliesReportFilters;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -23,7 +24,7 @@ class IncidentReport implements Report
      */
     public static function filters(): array
     {
-        return ['from', 'to', 'status', 'type', 'source', 'search'];
+        return ['from', 'to', 'status', 'type', 'source', 'barangay', 'search'];
     }
 
     public function title(): string
@@ -75,7 +76,7 @@ class IncidentReport implements Report
                 $this->formatText($incident->location_label),
                 $incident->source?->label(),
                 $this->formatText($incident->assigned_unit),
-                $incident->is_anonymous ? 'Anonymous' : $this->formatText($incident->reporter?->name),
+                $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? 'Guest'),
                 $this->formatDate($incident->reported_at, $dateFormat),
                 $this->formatDate($incident->verified_at, $dateFormat),
                 $this->formatDate($incident->resolved_at, $dateFormat),
@@ -119,6 +120,10 @@ class IncidentReport implements Report
 
         if (filled($filters['source'] ?? null) && in_array($filters['source'], IncidentSource::values(), true)) {
             $query->where('source', $filters['source']);
+        }
+
+        if (filled($filters['barangay'] ?? null) && CamalBarangays::isValid($filters['barangay'])) {
+            $query->where('location_label', $filters['barangay']);
         }
 
         if (filled($filters['search'] ?? null)) {

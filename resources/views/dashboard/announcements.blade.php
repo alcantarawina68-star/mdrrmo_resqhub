@@ -1,5 +1,5 @@
 <x-layouts.dashboard title="Announcements">
-    <x-page-header description="Publish official advisories for the public map and advisories page." />
+    <x-page-header description="Publish official announcements and advisories." />
 
     <div class="grid gap-6 lg:grid-cols-3" x-data="announcementsPage()">
         <div class="lg:col-span-2">

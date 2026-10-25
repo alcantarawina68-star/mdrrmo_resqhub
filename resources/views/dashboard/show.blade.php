@@ -38,8 +38,8 @@
                 <div class="card p-5">
                     <p class="panel-title mb-3">Reporter</p>
                     <dl class="space-y-2 text-sm">
-                        <div class="flex justify-between gap-3"><dt class="text-muted">Name</dt><dd class="font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? '—') }}</dd></div>
-                        <div class="flex justify-between gap-3"><dt class="text-muted">Contact</dt><dd class="mono">{{ $incident->is_anonymous ? '—' : ($incident->reporter?->contact_number ?? '—') }}</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-muted">Name</dt><dd class="font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? 'Guest') }}</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-muted">Contact</dt><dd class="mono">{{ $incident->is_anonymous ? '—' : ($incident->reporter?->contact_number ?? $incident->contact_number ?? '—') }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-muted">Verified</dt><dd class="mono">{{ $incident->verified_at?->format('M j, g:i A') ?? '—' }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-muted">Resolved</dt><dd class="mono">{{ $incident->resolved_at?->format('M j, g:i A') ?? '—' }}</dd></div>
                     </dl>

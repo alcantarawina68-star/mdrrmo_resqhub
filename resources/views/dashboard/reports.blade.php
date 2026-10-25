@@ -17,8 +17,17 @@
                 <label class="label" for="to">To</label>
                 <input id="to" type="date" name="to" class="input" value="{{ $to }}">
             </div>
+            <div class="field">
+                <label class="label" for="barangay">Barangay</label>
+                <select id="barangay" name="barangay" class="select">
+                    <option value="">All barangays</option>
+                    @foreach ($barangayList as $name)
+                        <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>
+                    @endforeach
+                </select>
+            </div>
             <button type="submit" class="btn btn-secondary">Apply</button>
-            @if ($from || $to)
+            @if ($from || $to || $barangay)
                 <a href="{{ route('dashboard.reports') }}" class="btn btn-tertiary">Clear</a>
             @endif
         </form>
@@ -41,7 +50,7 @@
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         <div class="card p-5">
-            <p class="panel-title mb-4">Daily trend (last 30 days)</p>
+            <p class="panel-title mb-4">Daily report (last 30 days)</p>
             @if (empty($trend))
                 <p class="py-8 text-center text-sm text-muted">No incidents in this period.</p>
             @else

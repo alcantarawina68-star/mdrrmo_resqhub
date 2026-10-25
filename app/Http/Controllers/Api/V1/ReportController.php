@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\ReportService;
+use App\Support\CamalBarangays;
 use App\Support\Reports\IncidentReport;
 use App\Support\Reports\ReportExporter;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ class ReportController extends Controller
     public function summary(Request $request): JsonResponse
     {
         return ApiResponse::success(
-            $this->reports->summary($request->input('from'), $request->input('to')),
+            $this->reports->summary($request->input('from'), $request->input('to'), $this->barangay($request)),
         );
     }
 
@@ -32,6 +33,7 @@ class ReportController extends Controller
                 min(max($request->integer('days', 30), 1), 90),
                 $request->input('from'),
                 $request->input('to'),
+                $this->barangay($request),
             ),
         );
     }
@@ -39,7 +41,7 @@ class ReportController extends Controller
     public function barangays(Request $request): JsonResponse
     {
         return ApiResponse::success(
-            $this->reports->barangayBreakdown($request->input('from'), $request->input('to')),
+            $this->reports->barangayBreakdown($request->input('from'), $request->input('to'), $this->barangay($request)),
         );
     }
 
@@ -50,5 +52,15 @@ class ReportController extends Controller
         return response()->streamDownload(function () use ($request) {
             echo $this->exporter->csvString(new IncidentReport, $request->only(IncidentReport::filters()));
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Only a name from the fixed barangay list is allowed through to a query.
+     */
+    private function barangay(Request $request): ?string
+    {
+        $barangay = $request->query('barangay');
+
+        return is_string($barangay) && CamalBarangays::isValid($barangay) ? $barangay : null;
     }
 }

@@ -1,8 +1,32 @@
 <x-layouts.app title="Submit a Report">
+    @php
+        $hotlineText = trim((string) ($hotline ?? ''));
+        $hotlineDigits = preg_replace('/\D/', '', $hotlineText) ?? '';
+        $telHotline = $hotlineDigits === ''
+            ? ''
+            : (str_starts_with($hotlineText, '+') ? '+'.$hotlineDigits : $hotlineDigits);
+    @endphp
+
+    @if ($telHotline !== '')
+        <div class="border-b border-border bg-surface">
+            <div class="mx-auto flex max-w-[1600px] items-center justify-center px-4 py-2 sm:px-6">
+                <a href="tel:{{ $telHotline }}"
+                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fg hover:bg-surface/90 focus:outline-none focus:ring-2 focus:ring-primary/50 sm:px-4"
+                    aria-label="Call hotline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>Call Hotline</span>
+                    <span class="mono text-xs text-muted sm:text-sm">{{ $hotlineText }}</span>
+                </a>
+            </div>
+        </div>
+    @endif
+
     <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6" x-data="reportForm()">
         <div class="mb-6">
             <h1>Submit a Report</h1>
-            <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
+            <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened. No account needed.</p>
         </div>
 
         <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data" @submit="submitting = true">
@@ -75,8 +99,12 @@
                         </div>
 
                         <div class="field">
-                            <label class="label" for="contact_number">Contact number <span class="normal-case">(optional)</span></label>
-                            <input id="contact_number" type="tel" name="contact_number" class="input" value="{{ old('contact_number', auth()->user()->contact_number) }}" placeholder="0917 123 4567">
+                            <label class="label" for="contact_number">Contact number <span class="normal-case">{{ auth()->guest() ? '(required)' : '(optional)' }}</span></label>
+                            <input id="contact_number" type="tel" name="contact_number" class="input" value="{{ old('contact_number', auth()->user()?->contact_number) }}" placeholder="0917 123 4567" @guest required @endguest>
+                            @guest
+                                <p class="mt-1 text-xs text-muted">Required so responders can reach you. It is never shown publicly.</p>
+                            @endguest
+                            @error('contact_number') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="field">
@@ -86,10 +114,12 @@
                             @error('emergency_contact') <span class="mt-1 block text-xs text-danger">{{ $message }}</span> @enderror
                         </div>
 
-                        <label class="flex cursor-pointer items-center gap-2 text-sm">
-                            <input type="checkbox" name="is_anonymous" value="1" class="h-4 w-4 accent-[var(--color-primary)]" @checked(old('is_anonymous'))>
-                            Report anonymously
-                        </label>
+                        @auth
+                            <label class="flex cursor-pointer items-center gap-2 text-sm">
+                                <input type="checkbox" name="is_anonymous" value="1" class="h-4 w-4 accent-[var(--color-primary)]" @checked(old('is_anonymous'))>
+                                Report anonymously
+                            </label>
+                        @endauth
 
                         <button type="submit" class="btn btn-primary w-full" :disabled="submitting">
                             <span x-show="!submitting">Submit Report</span>
@@ -185,4 +215,6 @@
             }));
         });
     </script>
+
+    <x-hotline-modal :hotline="$hotline" />
 </x-layouts.app>

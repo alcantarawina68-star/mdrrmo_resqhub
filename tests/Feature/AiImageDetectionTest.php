@@ -174,11 +174,11 @@ test('an unsuccessful AI response is recorded as failed', function () {
     expect(Evidence::first()->ai_error)->toBe('Hugging Face error (HTTP 503): Upstream model error');
 });
 
-test('an unauthenticated user cannot submit a report', function () {
+test('a guest report without a contact number is rejected before evidence is stored', function () {
     configureAiDetection();
 
     $this->post(route('report.store'), reportPayload())
-        ->assertRedirect('/login');
+        ->assertSessionHasErrors('contact_number');
 
     expect(Evidence::count())->toBe(0);
 });

@@ -27,6 +27,6 @@
     </p>
 
     <p class="mt-2 text-sm text-muted">
-        No account yet? <a href="{{ route('register') }}" class="font-medium text-primary">Register as a community user</a>.
+        Reports can be submitted without an account. <a href="{{ route('home') }}" class="font-medium text-primary">Submit a report</a>.
     </p>
 </x-layouts.guest>

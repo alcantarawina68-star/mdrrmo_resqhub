@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:api')->prefix('v1')->group(function () {
-    Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
 
     Route::get('incidents', [IncidentController::class, 'index']);

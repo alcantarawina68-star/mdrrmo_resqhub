@@ -17,9 +17,24 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [PublicController::class, 'map'])->name('home');
-Route::get('/advisories', [PublicController::class, 'advisories'])->name('advisories');
+Route::get('/', [IncidentController::class, 'create'])->name('home');
+
+// The advisories page is hidden for now; the controller and view stay in place
+// so restoring it only takes this one route.
+Route::redirect('/advisories', '/');
+
 Route::get('/incidents/{incident}', [PublicController::class, 'show'])->name('incidents.show');
+
+/*
+ * Guest reporting is public: registration is gone, so the form is the landing
+ * page and the only route a visitor needs. The static confirmation path is
+ * registered before /report so it can never be mistaken for a report id.
+ */
+Route::get('/report/submitted', [IncidentController::class, 'submitted'])->name('report.submitted');
+Route::get('/report', [IncidentController::class, 'create'])->name('report.create');
+Route::post('/report', [IncidentController::class, 'store'])
+    ->middleware('throttle:public-reports')
+    ->name('report.store');
 
 // Evidence bytes are read from the database rather than public/storage, so the
 // route is public like the file URLs it replaces: the public incident page shows
@@ -29,8 +44,6 @@ Route::get('/evidence/{evidence}/image', EvidenceImageController::class)->name('
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
@@ -46,8 +59,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'active', 'single-session'])->group(function () {
-    Route::get('/report', [IncidentController::class, 'create'])->name('report.create');
-    Route::post('/report', [IncidentController::class, 'store'])->name('report.store');
     Route::get('/my-reports', [IncidentController::class, 'myReports'])->name('my-reports');
     Route::get('/my-reports/export', [ReportController::class, 'myReports'])->name('my-reports.export');
     Route::get('/my-reports/export/pdf', [ReportController::class, 'myReportsPdf'])->name('my-reports.export.pdf');

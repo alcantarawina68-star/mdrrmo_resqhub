@@ -32,7 +32,7 @@ class IncidentService
         private readonly SmsService $sms,
     ) {}
 
-    public function createOnline(User $reporter, array $data): Incident
+    public function createOnline(?User $reporter, array $data): Incident
     {
         $attachment = $data['evidence'] ?? null;
         unset($data['evidence']);
@@ -40,12 +40,14 @@ class IncidentService
         $assignedUnit = $data['assigned_unit'] ?? null;
         unset($data['assigned_unit']);
 
-        $autoVerified = $this->isOperationsRole($reporter);
+        $autoVerified = $reporter !== null && $this->isOperationsRole($reporter);
         $status = $autoVerified ? IncidentStatus::Verified : IncidentStatus::UnderVerification;
 
         $incident = DB::transaction(function () use ($reporter, $data, $attachment, $status, $autoVerified, $assignedUnit) {
-            $incident = $reporter->incidents()->create([
+            $incident = Incident::create([
                 ...$data,
+                'user_id' => $reporter?->id,
+                'is_anonymous' => $reporter === null ? false : ($data['is_anonymous'] ?? false),
                 'source' => IncidentSource::Online,
                 'status' => $status,
                 'verified_at' => $autoVerified ? now() : null,
@@ -244,12 +246,12 @@ class IncidentService
      * only inserts rows, and a notification that outlives a rolled-back change
      * would be worse than a missing one.
      */
-    private function notifyOperations(IncidentNotification $notification, User $actor): void
+    private function notifyOperations(IncidentNotification $notification, ?User $actor): void
     {
         $recipients = User::query()
             ->whereIn('role', UserRole::operationsRoles())
             ->where('status', UserStatus::Active->value)
-            ->whereKeyNot($actor->getKey())
+            ->when($actor !== null, fn ($query) => $query->whereKeyNot($actor->getKey()))
             ->get();
 
         if ($recipients->isEmpty()) {
@@ -338,11 +340,11 @@ class IncidentService
         return null;
     }
 
-    private function logStatus(Incident $incident, User $actor, IncidentStatus $newStatus, ?string $note = null): void
+    private function logStatus(Incident $incident, ?User $actor, IncidentStatus $newStatus, ?string $note = null): void
     {
         StatusLog::create([
             'incident_id' => $incident->id,
-            'user_id' => $actor->id,
+            'user_id' => $actor?->id,
             'old_status' => $incident->getOriginal('status'),
             'new_status' => $newStatus->value,
             'note' => $note,
@@ -392,7 +394,11 @@ class IncidentService
                 : "This number is listed for a {$type} incident ({$number}).";
         }
 
-        return 'ResQHub: '.$intro.' '.$event.' Track updates here: '.site_setting('website', 'resqhub.ph').'/my-reports.';
+        $tracking = $incident->source === IncidentSource::Online && $incident->user_id === null
+            ? 'Keep your reference number for follow-up.'
+            : 'Track updates here: '.site_setting('website', 'resqhub.ph').'/my-reports.';
+
+        return 'ResQHub: '.$intro.' '.$event.' '.$tracking;
     }
 
     private function personName(Incident $incident): ?string

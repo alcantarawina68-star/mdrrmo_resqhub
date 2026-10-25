@@ -1,6 +1,6 @@
 <x-layouts.app title="{{ $incident->incident_number }}">
     <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
-        <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to map</a>
+        <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to report form</a>
 
         <div class="grid gap-6 lg:grid-cols-2">
             <div class="card relative overflow-hidden">
@@ -34,7 +34,7 @@
                     </div>
                     <div class="flex justify-between gap-4 px-4 py-3 text-sm">
                         <span class="text-muted">Reporter</span>
-                        <span class="text-right font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? '—') }}</span>
+                        <span class="text-right font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? 'Guest') }}</span>
                     </div>
                     @if ($incident->assigned_unit)
                         <div class="flex justify-between gap-4 px-4 py-3 text-sm">

@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
-use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
@@ -17,22 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $user = User::create([
-            ...$request->validated(),
-            'role' => UserRole::CommunityUser,
-            'status' => UserStatus::Active,
-        ]);
-
-        $token = $user->createToken('api')->plainTextToken;
-
-        return ApiResponse::success([
-            'token' => $token,
-            'user' => new UserResource($user),
-        ], 201);
-    }
-
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::where('email', $request->input('email'))->first();
