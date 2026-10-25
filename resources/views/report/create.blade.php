@@ -26,7 +26,7 @@
     <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6" x-data="reportForm()">
         <div class="mb-6">
             <h1>Submit a Report</h1>
-            <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened. No account needed.</p>
+            <p class="mt-1 text-sm text-muted">Drop a pin on the map first, then describe what happened.</p>
         </div>
 
         <form method="POST" action="{{ route('report.store') }}" class="grid gap-6 lg:grid-cols-5" enctype="multipart/form-data" @submit="submitting = true">
