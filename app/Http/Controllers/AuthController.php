@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
-use App\Enums\UserStatus;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -63,27 +61,6 @@ class AuthController extends Controller
         }
 
         return redirect()->intended(route('my-reports'));
-    }
-
-    public function showRegister(): View
-    {
-        return view('auth.register');
-    }
-
-    public function register(RegisterRequest $request): RedirectResponse
-    {
-        $user = User::create([
-            ...$request->validated(),
-            'role' => UserRole::CommunityUser,
-            'status' => UserStatus::Active,
-        ]);
-
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
-        $user->forceFill(['session_id' => $request->session()->getId()])->save();
-
-        return redirect()->route('report.create');
     }
 
     public function logout(Request $request): RedirectResponse

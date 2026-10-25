@@ -41,5 +41,14 @@ class AppServiceProvider extends ServiceProvider
                 ? Limit::perMinute(100)->by($request->user()->id)
                 : Limit::perMinute(30)->by($request->ip());
         });
+
+        // Guest reports need no account, so the form is a public write endpoint.
+        // Key on the IP because there is no user to key on.
+        RateLimiter::for('public-reports', function (Request $request) {
+            return [
+                Limit::perMinute(10)->by($request->ip()),
+                Limit::perHour(30)->by($request->ip()),
+            ];
+        });
     }
 }

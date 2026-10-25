@@ -93,7 +93,7 @@ class UserReport implements Report
 
         // Mirror the roster page: an admin never sees a superadmin row there,
         // so the export must not hand them one either.
-        if ($viewer === null || ! $viewer->isSuperadmin()) {
+        if (! $viewer?->isSuperadmin()) {
             $query->where('role', '!=', UserRole::Superadmin->value);
         }
 

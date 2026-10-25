@@ -105,6 +105,19 @@ test('the incident export is bounded by the from and to filters', function () {
     expect($rows)->toHaveCount(2);
 });
 
+test('the incident export is bounded by the barangay filter', function () {
+    $admin = User::factory()->admin()->create();
+    Incident::factory()->create(['location_label' => 'Minanga']);
+    Incident::factory()->create(['location_label' => 'Dugo']);
+
+    $rows = csvRows(actingAs($admin)->get(route('dashboard.reports.export', [
+        'barangay' => 'Minanga',
+    ]))->streamedContent());
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows[1][3])->toBe('Minanga');
+});
+
 test('an unknown filter key is ignored instead of reaching the query builder', function () {
     $admin = User::factory()->admin()->create();
     Incident::factory()->create();

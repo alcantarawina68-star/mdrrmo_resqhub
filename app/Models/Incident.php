@@ -27,6 +27,7 @@ class Incident extends Model
         'source',
         'caller_name',
         'caller_contact',
+        'contact_number',
         'emergency_contact',
         'is_anonymous',
         'status',
@@ -81,6 +82,7 @@ class Incident extends Model
     {
         return $this->emergency_contact
             ?? $this->caller_contact
+            ?? $this->contact_number
             ?? $this->reporter?->contact_number;
     }
 

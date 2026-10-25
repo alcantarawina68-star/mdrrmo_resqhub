@@ -84,6 +84,59 @@ test('a community user cannot assign a unit when submitting a report', function 
     expect($incident->assigned_unit)->toBeNull();
 });
 
+test('a guest can submit a report with a contact number and sees the reference', function () use ($onlinePayload) {
+    $response = $this->post(route('report.store'), $onlinePayload)
+        ->assertRedirect(route('report.submitted'));
+
+    $incident = Incident::firstOrFail();
+
+    $response->assertSessionHas('submitted_report');
+    expect(session('submitted_report'))->toMatchArray([
+        'incidentNumber' => $incident->incident_number,
+        'contactNumber' => '09171234567',
+    ]);
+
+    expect($incident->user_id)->toBeNull()
+        ->and($incident->contact_number)->toBe('09171234567')
+        ->and($incident->status)->toBe(IncidentStatus::UnderVerification)
+        ->and($incident->verified_at)->toBeNull()
+        ->and($incident->statusLogs()->first()->user_id)->toBeNull();
+
+    $this->followRedirects($response)
+        ->assertOk()
+        ->assertSee($incident->incident_number)
+        ->assertSee('09171234567');
+});
+
+test('a guest must give a contact number', function (?string $contact) use ($onlinePayload) {
+    $this->post(route('report.store'), [...$onlinePayload, 'contact_number' => $contact])
+        ->assertSessionHasErrors('contact_number');
+
+    expect(Incident::count())->toBe(0);
+})->with([
+    'missing' => [null],
+    'invalid' => ['12345'],
+]);
+
+test('a guest report is never anonymous', function () use ($onlinePayload) {
+    $this->post(route('report.store'), [...$onlinePayload, 'is_anonymous' => true])
+        ->assertRedirect(route('report.submitted'));
+
+    expect(Incident::firstOrFail()->is_anonymous)->toBeFalse();
+});
+
+test('an authenticated reporter may omit a contact number', function () use ($onlinePayload) {
+    $user = User::factory()->communityUser()->create();
+    unset($onlinePayload['contact_number']);
+
+    actingAs($user)
+        ->post(route('report.store'), $onlinePayload)
+        ->assertRedirect(route('my-reports'))
+        ->assertSessionHasNoErrors();
+
+    expect(Incident::firstOrFail()->contact_number)->toBeNull();
+});
+
 test('an encoder encoding a caller report can assign a unit and it is verified', function () use ($callerPayload) {
     $encoder = User::factory()->encoder()->create();
 

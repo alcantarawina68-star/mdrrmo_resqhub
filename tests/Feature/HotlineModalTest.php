@@ -4,7 +4,7 @@ use App\Models\SiteSetting;
 
 use function Pest\Laravel\get;
 
-test('the public map is the landing page and shows the hotline popup', function () {
+test('the public report page is the landing page and shows the hotline popup', function () {
     get('/')
         ->assertOk()
         ->assertSee('Emergency hotline')
@@ -24,8 +24,8 @@ test('the hotline popup reflects the configured hotline setting', function () {
         ->assertSee('tel:09199999999', false);
 });
 
-test('the hotline popup only renders on the public map', function () {
-    get('/advisories')
+test('the hotline popup only renders on the public report page', function () {
+    get('/login')
         ->assertOk()
         ->assertDontSee('hotline-dialog-title', false);
 });

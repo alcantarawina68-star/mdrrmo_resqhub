@@ -6,6 +6,7 @@ use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Models\Incident;
+use App\Support\CamalBarangays;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -22,7 +23,7 @@ class ReportService
      *
      * @return array<string, mixed>
      */
-    public function summary(?string $from = null, ?string $to = null): array
+    public function summary(?string $from = null, ?string $to = null, ?string $barangay = null): array
     {
         $base = Incident::query();
 
@@ -32,6 +33,10 @@ class ReportService
 
         if ($to) {
             $base->where('reported_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+
+        if (CamalBarangays::isValid($barangay)) {
+            $base->where('location_label', $barangay);
         }
 
         $byStatus = $base->clone()
@@ -64,13 +69,19 @@ class ReportService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function dailyTrend(int $days = 30, ?string $from = null, ?string $to = null): array
+    public function dailyTrend(int $days = 30, ?string $from = null, ?string $to = null, ?string $barangay = null): array
     {
         $start = $from ? Carbon::parse($from)->startOfDay() : now()->subDays($days - 1)->startOfDay();
         $end = $to ? Carbon::parse($to)->endOfDay() : now()->endOfDay();
 
         $rows = Incident::query()
-            ->whereBetween('reported_at', [$start, $end])
+            ->whereBetween('reported_at', [$start, $end]);
+
+        if (CamalBarangays::isValid($barangay)) {
+            $rows->where('location_label', $barangay);
+        }
+
+        $rows = $rows
             ->selectRaw('DATE(reported_at) as day, COUNT(*) as total')
             ->groupBy('day')
             ->orderBy('day')
@@ -93,7 +104,7 @@ class ReportService
     /**
      * @return array<string, mixed>
      */
-    public function barangayBreakdown(?string $from = null, ?string $to = null): array
+    public function barangayBreakdown(?string $from = null, ?string $to = null, ?string $barangay = null): array
     {
         $query = Incident::query();
 
@@ -103,6 +114,10 @@ class ReportService
 
         if ($to) {
             $query->where('reported_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+
+        if (CamalBarangays::isValid($barangay)) {
+            $query->where('location_label', $barangay);
         }
 
         return $query

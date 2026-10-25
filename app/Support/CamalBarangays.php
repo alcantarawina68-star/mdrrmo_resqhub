@@ -24,4 +24,12 @@ final class CamalBarangays
     {
         return self::ALL;
     }
+
+    /**
+     * Only names from the fixed list may reach a report filter.
+     */
+    public static function isValid(?string $barangay): bool
+    {
+        return $barangay !== null && in_array($barangay, self::ALL, true);
+    }
 }

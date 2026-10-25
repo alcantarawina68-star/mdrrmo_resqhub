@@ -138,6 +138,22 @@ test('submitting an online report sends an SMS only to its emergency contact', f
         && str_contains($job->message, 'listed this number as their emergency contact'));
 });
 
+test('a guest report is texted a reference number instead of a dashboard link', function () {
+    Queue::fake([SendSms::class]);
+
+    $this->post(route('report.store'), [
+        'incident_type' => IncidentType::Fire->value,
+        'description' => 'A house fire was spotted near the barangay hall spreading quickly.',
+        'latitude' => 18.2756,
+        'longitude' => 121.6756,
+        'contact_number' => '09171234567',
+    ])->assertRedirect(route('report.submitted'));
+
+    Queue::assertPushed(SendSms::class, fn (SendSms $job) => $job->phone === '09171234567'
+        && str_contains($job->message, 'reference number')
+        && ! str_contains($job->message, '/my-reports'));
+});
+
 test('a caller-based report without an emergency contact falls back to the caller contact', function () {
     Queue::fake([SendSms::class]);
 

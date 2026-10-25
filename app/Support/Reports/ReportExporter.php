@@ -35,16 +35,7 @@ class ReportExporter
     {
         return response()->streamDownload(function () use ($report, $filters, $viewer): void {
             $handle = fopen('php://output', 'w');
-
-            // Byte order mark, so Excel opens the export as UTF-8 rather than
-            // mangling every accented barangay name.
-            fwrite($handle, "\xEF\xBB\xBF");
-            $this->writeRow($handle, $report->headings());
-
-            foreach ($report->rows($filters, $viewer, null, self::CSV_DATE_FORMAT) as $row) {
-                $this->writeRow($handle, $row);
-            }
-
+            $this->writeCsvToHandle($handle, $report, $filters, $viewer);
             fclose($handle);
         }, $this->filename($report, 'csv'), [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -60,19 +51,27 @@ class ReportExporter
     public function csvString(Report $report, array $filters, ?User $viewer = null): string
     {
         $handle = fopen('php://temp', 'r+');
+        $this->writeCsvToHandle($handle, $report, $filters, $viewer);
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
 
+        return $csv;
+    }
+
+    /**
+     * @param  resource  $handle
+     */
+    private function writeCsvToHandle($handle, Report $report, array $filters, ?User $viewer): void
+    {
+        // Byte order mark, so Excel opens the export as UTF-8 rather than
+        // mangling every accented barangay name.
         fwrite($handle, "\xEF\xBB\xBF");
         $this->writeRow($handle, $report->headings());
 
         foreach ($report->rows($filters, $viewer, null, self::CSV_DATE_FORMAT) as $row) {
             $this->writeRow($handle, $row);
         }
-
-        rewind($handle);
-        $csv = stream_get_contents($handle);
-        fclose($handle);
-
-        return $csv;
     }
 
     /**

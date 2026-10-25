@@ -111,14 +111,15 @@ test('closing an incident is the only transition that records a resolution time'
     expect($incident->refresh()->resolved_at)->not->toBeNull();
 });
 
-test('the public map payload carries status but no classification', function () {
+test('the public incident api carries status but no classification', function () {
     Incident::factory()->verified()->create();
 
-    $this->get(route('home'))
+    $this->getJson('/api/v1/incidents?limit=1')
         ->assertOk()
-        ->assertSee('status_label', false)
-        ->assertDontSee('classification', false)
-        ->assertDontSee('priority', false);
+        ->assertJsonPath('data.0.status', IncidentStatus::Verified->value)
+        ->assertJsonPath('data.0.status_label', IncidentStatus::Verified->label())
+        ->assertJsonMissingPath('data.0.classification')
+        ->assertJsonMissingPath('data.0.priority');
 });
 
 test('the stylesheet carries no classification marker rings', function () {

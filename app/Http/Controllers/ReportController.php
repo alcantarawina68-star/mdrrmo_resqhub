@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReportService;
+use App\Support\CamalBarangays;
 use App\Support\Reports\AnnouncementReport;
 use App\Support\Reports\IncidentReport;
 use App\Support\Reports\MyIncidentReport;
@@ -33,12 +34,17 @@ class ReportController extends Controller
     {
         $from = $request->input('from');
         $to = $request->input('to');
+        $barangay = $request->query('barangay');
+        $barangay = is_string($barangay) && CamalBarangays::isValid($barangay) ? $barangay : null;
 
-        $summary = $this->reports->summary($from, $to);
-        $trend = $this->reports->dailyTrend(30, $from, $to);
-        $barangays = $this->reports->barangayBreakdown($from, $to);
+        $summary = $this->reports->summary($from, $to, $barangay);
+        $trend = $this->reports->dailyTrend(30, $from, $to, $barangay);
+        $barangays = $this->reports->barangayBreakdown($from, $to, $barangay);
 
-        return view('dashboard.reports', compact('summary', 'trend', 'barangays', 'from', 'to'));
+        return view('dashboard.reports', [
+            ...compact('summary', 'trend', 'barangays', 'from', 'to', 'barangay'),
+            'barangayList' => CamalBarangays::all(),
+        ]);
     }
 
     public function export(Request $request): StreamedResponse

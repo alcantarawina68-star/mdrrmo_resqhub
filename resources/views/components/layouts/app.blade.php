@@ -12,11 +12,9 @@
             \App\Enums\UserRole::Responder,
         );
     $navLinks = [
-        ['label' => 'Live Map', 'href' => route('home'), 'active' => request()->routeIs('home'), 'desktop' => true],
-        ['label' => 'Advisories', 'href' => route('advisories'), 'active' => request()->routeIs('advisories'), 'desktop' => true],
+        ['label' => 'Submit Report', 'href' => route('home'), 'active' => request()->routeIs('home'), 'desktop' => true],
     ];
     if (auth()->check()) {
-        $navLinks[] = ['label' => 'Submit Report', 'href' => route('report.create'), 'active' => request()->routeIs('report.create'), 'desktop' => false];
         $navLinks[] = ['label' => 'My Reports', 'href' => route('my-reports'), 'active' => request()->routeIs('my-reports'), 'desktop' => true];
     }
     if ($canUseOperations) {
@@ -32,7 +30,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} · ResQHub</title>
-    <meta name="description" content="ResQHub — live incident map and advisories from {{ site_setting('agency_short_name') }}.">
+    <meta name="description" content="ResQHub — submit an emergency report to {{ site_setting('agency_short_name') }}.">
     <meta name="theme-color" content="#1b4d3e">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <script>
@@ -73,7 +71,6 @@
                     </form>
                 @else
                     <a href="{{ route('login') }}" class="btn btn-secondary">Log in</a>
-                    <a href="{{ route('register') }}" class="btn btn-primary">Register</a>
                 @endauth
 
                 <button type="button" class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface" aria-label="Toggle dark mode"
@@ -122,7 +119,6 @@
                 @else
                     <div class="flex flex-col gap-2 px-4 pb-3">
                         <a href="{{ route('login') }}" class="btn btn-secondary w-full">Log in</a>
-                        <a href="{{ route('register') }}" class="btn btn-primary w-full">Register</a>
                     </div>
                 @endauth
             </div>
@@ -137,18 +133,10 @@
 
     <nav class="bottom-nav lg:hidden" aria-label="Mobile">
         <a href="{{ route('home') }}" class="bottom-nav-link {{ request()->routeIs('home') ? 'bottom-nav-link-active' : '' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-            <span>Map</span>
-        </a>
-        <a href="{{ route('advisories') }}" class="bottom-nav-link {{ request()->routeIs('advisories') ? 'bottom-nav-link-active' : '' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
-            <span>Advisories</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            <span>Report</span>
         </a>
         @auth
-            <a href="{{ route('report.create') }}" class="bottom-nav-link {{ request()->routeIs('report.create') ? 'bottom-nav-link-active' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                <span>Report</span>
-            </a>
             <a href="{{ route('my-reports') }}" class="bottom-nav-link {{ request()->routeIs('my-reports') ? 'bottom-nav-link-active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span>My Reports</span>

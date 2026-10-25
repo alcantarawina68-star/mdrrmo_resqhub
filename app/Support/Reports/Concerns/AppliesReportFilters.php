@@ -52,8 +52,10 @@ trait AppliesReportFilters
             return '—';
         }
 
-        return $limit > 0 && mb_strlen($value) > $limit
-            ? mb_substr($value, 0, $limit - 1).'…'
-            : $value;
+        if ($limit > 0 && mb_strlen($value) > $limit) {
+            return mb_substr($value, 0, $limit - 1).'…';
+        }
+
+        return $value;
     }
 }

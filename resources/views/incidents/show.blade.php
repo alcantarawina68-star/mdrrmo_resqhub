@@ -1,6 +1,6 @@
 <x-layouts.app title="{{ $incident->incident_number }}">
     <div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
-        <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to map</a>
+        <a href="{{ route('home') }}" class="btn btn-tertiary mb-6 !px-0">&larr; Back to report form</a>
 
         <div class="grid gap-6 lg:grid-cols-2">
             <div class="card relative overflow-hidden">
@@ -34,7 +34,7 @@
                     </div>
                     <div class="flex justify-between gap-4 px-4 py-3 text-sm">
                         <span class="text-muted">Reporter</span>
-                        <span class="text-right font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? '—') }}</span>
+                        <span class="text-right font-medium">{{ $incident->is_anonymous ? 'Anonymous' : ($incident->reporter?->name ?? 'Guest') }}</span>
                     </div>
                     @if ($incident->assigned_unit)
                         <div class="flex justify-between gap-4 px-4 py-3 text-sm">
@@ -56,9 +56,9 @@
                             @foreach ($incident->evidence as $item)
                                 <li class="text-sm">
                                     <div class="flex items-start gap-4 px-4 py-3">
-                                        <img src="{{ asset('storage/'.$item->file_path) }}" alt="{{ $item->original_name }}" class="h-16 w-16 shrink-0 rounded border border-border bg-bg object-cover">
+                                        <img src="{{ route('evidence.image', $item) }}" alt="{{ $item->original_name }}" class="h-16 w-16 shrink-0 rounded border border-border bg-bg object-cover">
                                         <div class="min-w-0 flex-1">
-                                            <a href="{{ asset('storage/'.$item->file_path) }}" download="{{ $item->original_name }}"
+                                            <a href="{{ route('evidence.image', ['evidence' => $item, 'download' => 1]) }}" download="{{ $item->original_name }}"
                                                 class="flex items-center justify-between gap-4 no-underline transition-colors duration-150 hover:text-fg"
                                                 aria-label="Download {{ $item->original_name }}">
                                                 <span class="truncate">{{ $item->original_name }}</span>
